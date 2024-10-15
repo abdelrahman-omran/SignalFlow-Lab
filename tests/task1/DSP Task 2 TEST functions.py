@@ -4,6 +4,9 @@
 
 # %%
 
+indices = []
+samples = []
+
 def ReadSignalFile(file_name):
     expected_indices=[]
     expected_samples=[]
@@ -28,6 +31,7 @@ def ReadSignalFile(file_name):
 
 
 # %%
+indices, samples = ReadSignalFile("../../results/add-result.txt")
 
 
 def AddSignalSamplesAreEqual(userFirstSignal,userSecondSignal,Your_indices,Your_samples):
@@ -49,7 +53,7 @@ def AddSignalSamplesAreEqual(userFirstSignal,userSecondSignal,Your_indices,Your_
             return
     print("Addition Test case passed successfully")
 
-AddSignalSamplesAreEqual("Signal1.txt", "Signal2.txt",indicies,samples) # call this function with your computed indicies and samples
+AddSignalSamplesAreEqual("Signal1.txt", "Signal2.txt",indices,samples) # call this function with your computed indicies and samples
 
 
 # %%
