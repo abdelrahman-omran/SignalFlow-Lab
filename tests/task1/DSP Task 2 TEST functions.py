@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 # coding: utf-8
 # %%
-
 # %%
-
-indices = []
-samples = []
+# file paths prefixes
+results_path = "./results/"
+tests_path = "./tests/task1/"
 
 def ReadSignalFile(file_name):
     expected_indices=[]
     expected_samples=[]
+
     with open(file_name, 'r') as f:
         line = f.readline()
         line = f.readline()
@@ -31,12 +31,12 @@ def ReadSignalFile(file_name):
 
 
 # %%
-indices, samples = ReadSignalFile("../../results/add-result.txt")
-
+# load results from the output files
+indices, samples = ReadSignalFile(results_path + "add-result.txt")
 
 def AddSignalSamplesAreEqual(userFirstSignal,userSecondSignal,Your_indices,Your_samples):
     if(userFirstSignal=='Signal1.txt' and userSecondSignal=='Signal2.txt'):
-        file_name="add.txt"  # write here the path of the add output file
+        file_name = tests_path + "add.txt"  # write here the path of the add output file
     expected_indices,expected_samples=ReadSignalFile(file_name)          
     if (len(expected_samples)!=len(Your_samples)) and (len(expected_indices)!=len(Your_indices)):
         print("Addition Test case failed, your signal have different length from the expected one")
@@ -53,14 +53,15 @@ def AddSignalSamplesAreEqual(userFirstSignal,userSecondSignal,Your_indices,Your_
             return
     print("Addition Test case passed successfully")
 
-AddSignalSamplesAreEqual("Signal1.txt", "Signal2.txt",indices,samples) # call this function with your computed indicies and samples
+AddSignalSamplesAreEqual("Signal1.txt", "Signal2.txt", indices, samples) # call this function with your computed indicies and samples
 
 
 # %%
+indices, samples = ReadSignalFile(results_path + "sub-result.txt")
 
 def SubSignalSamplesAreEqual(userFirstSignal,userSecondSignal,Your_indices,Your_samples):
     if(userFirstSignal=='Signal1.txt' and userSecondSignal=='Signal2.txt'):
-        file_name="subtract.txt" # write here the path of the subtract output file
+        file_name = tests_path + "subtract.txt" # write here the path of the subtract output file
         
     expected_indices,expected_samples=ReadSignalFile(file_name)   
     
@@ -79,15 +80,16 @@ def SubSignalSamplesAreEqual(userFirstSignal,userSecondSignal,Your_indices,Your_
             return
     print("Subtraction Test case passed successfully")
     
-SubSignalSamplesAreEqual("Signal1.txt", "Signal2.txt",indicies,samples)  # call this function with your computed indicies and samples
+SubSignalSamplesAreEqual("Signal1.txt", "Signal2.txt", indices, samples)  # call this function with your computed indicies and samples
 
 
 # %%
 
+indices, samples = ReadSignalFile(results_path + "mul-result.txt")
 
 def MultiplySignalByConst(User_Const,Your_indices,Your_samples):
     if(User_Const==5):
-        file_name="mul5.txt"  # write here the path of the mul5 output file
+        file_name = tests_path + "mul5.txt"  # write here the path of the mul5 output file
         
     expected_indices,expected_samples=ReadSignalFile(file_name)      
     if (len(expected_samples)!=len(Your_samples)) and (len(expected_indices)!=len(Your_indices)):
@@ -105,15 +107,15 @@ def MultiplySignalByConst(User_Const,Your_indices,Your_samples):
             return
     print("Multiply by "+str(User_Const)+" Test case passed successfully")
 
-MultiplySignalByConst(5,indicies, samples)# call this function with your computed indicies and samples
+MultiplySignalByConst(5,indices, samples)# call this function with your computed indicies and samples
 
 
 # %%
-
+indices, samples = ReadSignalFile(results_path + "shift-result.txt")
 
 def ShiftSignalByConst(Shift_value,Your_indices,Your_samples):
     if(Shift_value==3):  #x(n+k)
-        file_name="advance3.txt" # write here the path of delay3 output file
+        file_name= tests_path + "advance3.txt" # write here the path of delay3 output file
     elif(Shift_value==-3): #x(n-k)
         file_name="delay3.txt" # write here the path of advance3 output file
         
@@ -133,13 +135,13 @@ def ShiftSignalByConst(Shift_value,Your_indices,Your_samples):
             return
     print("Shift by "+str(Shift_value)+" Test case passed successfully")
 
-ShiftSignalByConst(3,indicies,samples)  # call this function with your computed indicies and samples
+ShiftSignalByConst(3,indices,samples)  # call this function with your computed indicies and samples
 
 # %%
 
-
+indices, samples = ReadSignalFile(results_path + "fold-result.txt")
 def Folding(Your_indices,Your_samples):
-    file_name = "folding.txt"  # write here the path of the folding output file
+    file_name = tests_path + "folding.txt"  # write here the path of the folding output file
     expected_indices,expected_samples=ReadSignalFile(file_name)      
     if (len(expected_samples)!=len(Your_samples)) and (len(expected_indices)!=len(Your_indices)):
         print("Folding Test case failed, your signal have different length from the expected one")
@@ -156,6 +158,6 @@ def Folding(Your_indices,Your_samples):
             return
     print("Folding Test case passed successfully")
 
-Folding(indicies,samples)  # call this function with your computed indicies and samples
+Folding(indices,samples)  # call this function with your computed indicies and samples
 
 # %%
