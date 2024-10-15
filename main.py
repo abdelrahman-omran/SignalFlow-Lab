@@ -52,6 +52,8 @@ class SignalProcessorApp:
         tk.Button(button_frame, text="Shift Signal", command=self.shift_signal).grid(row=1, column=1, padx=5, pady=5)
         tk.Button(button_frame, text="Reverse Signal", command=self.reverse_signal).grid(row=1, column=2, padx=5, pady=5)
         tk.Button(button_frame, text="Visualize Signal", command=self.visualize_signal).grid(row=2, column=0, columnspan=3, padx=5, pady=5)
+        tk.Button(button_frame, text="Clear Signals", command=self.clear_signals).grid(row=3, column=0, columnspan=3, padx=5, pady=5)
+
 
     def create_task2_tab(self, tab):
         # Placeholder for future task 2 functionalities
@@ -152,6 +154,11 @@ class SignalProcessorApp:
         reversed_indices = [-i for i in last_indices]
         self.save_result("rev", reversed_indices, reversed_signal)
         messagebox.showinfo("Success", "Signal reversed successfully!")
+    
+    def clear_signals(self):
+        """Clears all loaded signals from memory."""
+        self.signals.clear()
+        messagebox.showinfo("Success", "All signals cleared!")
 
     def save_result(self, operation, indices, signal):
         result_file_path = os.path.join(self.results_dir, f"{operation}-result.txt")
