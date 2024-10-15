@@ -172,13 +172,18 @@ class SignalProcessorApp:
         messagebox.showinfo("Success", "Signal reversed successfully!")
 
     def save_result(self, operation, indices, signal):
+
         # Save the result to a file
+        prefix = 0
         result_file_path = os.path.join(self.results_dir, f"{operation}-result.txt")
         with open(result_file_path, 'w') as f:
-            f.write(f"{len(signal)}\n")
+            f.write(f"{prefix}\n")
+            f.write(f"{prefix}\n")
+            f.write(f"{len(signal)}\n")  # Write the number of samples
             for index, value in zip(indices, signal):
-                f.write(f"{index} {value}\n")
+                f.write(f"{int(index)} {int(value)}\n")  # Write index and value
         messagebox.showinfo("Success", f"Result saved to {result_file_path}")
+
 
 # Main application
 if __name__ == "__main__":
