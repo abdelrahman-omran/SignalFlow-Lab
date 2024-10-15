@@ -2,13 +2,18 @@ import os
 import tkinter as tk
 from tkinter import ttk, filedialog, simpledialog
 import matplotlib.pyplot as plt
-import pandas as pd
 from tkinter import messagebox
 
 class SignalProcessorApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Signal Processor")
+
+        # Make app responsive
+        self.root.geometry("800x600")
+        self.root.minsize(600, 400)
+        self.root.columnconfigure(0, weight=1)
+        self.root.rowconfigure(0, weight=1)
 
         # List to store signals
         self.signals = []
@@ -19,46 +24,47 @@ class SignalProcessorApp:
 
         # Create tabs
         self.notebook = ttk.Notebook(self.root)
-        self.notebook.pack(fill='both', expand=True)
+        self.notebook.grid(sticky="nsew")
 
         # Create the different tabs for tasks
         self.create_tabs()
 
     def create_tabs(self):
-        # Tab 1: Signal Operations
-        signal_operations_tab = ttk.Frame(self.notebook)
-        self.notebook.add(signal_operations_tab, text="Signal Operations")
-        self.create_signal_operations_tab(signal_operations_tab)
+        # Tab 1: Task 1 with all operations
+        task1_tab = ttk.Frame(self.notebook)
+        self.notebook.add(task1_tab, text="Task 1")
+        self.create_task1_tab(task1_tab)
 
-        # Tab 2: Visualize Signal
-        visualize_signal_tab = ttk.Frame(self.notebook)
-        self.notebook.add(visualize_signal_tab, text="Visualize Signal")
-        self.create_visualize_signal_tab(visualize_signal_tab)
+        # Tab 2: Task 2 (Placeholder for future operations)
+        task2_tab = ttk.Frame(self.notebook)
+        self.notebook.add(task2_tab, text="Task 2")
+        self.create_task2_tab(task2_tab)
 
-    def create_signal_operations_tab(self, tab):
-        # Add buttons for signal operations in this tab
-        tk.Button(tab, text="Load Signal", command=self.load_signal).pack(pady=10)
-        tk.Button(tab, text="Add Signals", command=self.add_signals).pack(pady=10)
-        tk.Button(tab, text="Multiply Signal by Constant", command=self.multiply_signal).pack(pady=10)
-        tk.Button(tab, text="Subtract Signals", command=self.subtract_signals).pack(pady=10)
-        tk.Button(tab, text="Shift Signal", command=self.shift_signal).pack(pady=10)
-        tk.Button(tab, text="Reverse Signal", command=self.reverse_signal).pack(pady=10)
+    def create_task1_tab(self, tab):
+        # Task 1 Tab Layout: Buttons for signal operations and visualization
+        button_frame = ttk.Frame(tab)
+        button_frame.pack(padx=10, pady=10, fill="both", expand=True)
 
-    def create_visualize_signal_tab(self, tab):
-        # Visualization tab
-        tk.Button(tab, text="Visualize Signal", command=self.visualize_signal).pack(pady=10)
+        tk.Button(button_frame, text="Load Signal", command=self.load_signal).grid(row=0, column=0, padx=5, pady=5)
+        tk.Button(button_frame, text="Add Signals", command=self.add_signals).grid(row=0, column=1, padx=5, pady=5)
+        tk.Button(button_frame, text="Multiply Signal by Constant", command=self.multiply_signal).grid(row=0, column=2, padx=5, pady=5)
+        tk.Button(button_frame, text="Subtract Signals", command=self.subtract_signals).grid(row=1, column=0, padx=5, pady=5)
+        tk.Button(button_frame, text="Shift Signal", command=self.shift_signal).grid(row=1, column=1, padx=5, pady=5)
+        tk.Button(button_frame, text="Reverse Signal", command=self.reverse_signal).grid(row=1, column=2, padx=5, pady=5)
+        tk.Button(button_frame, text="Visualize Signal", command=self.visualize_signal).grid(row=2, column=0, columnspan=3, padx=5, pady=5)
+
+    def create_task2_tab(self, tab):
+        # Placeholder for future task 2 functionalities
+        ttk.Label(tab, text="Task 2 operations will be added here.").pack(pady=20)
 
     def load_signal(self):
-        # Load signal from a .txt file
         file_path = filedialog.askopenfilename()
         if file_path:
             try:
-                # Reading the text file
                 with open(file_path, 'r') as file:
                     lines = file.readlines()
-
-                start_index = int(lines[1])  # The second line is the start index
-                N = int(lines[2])  # The third line is the number of samples
+                start_index = int(lines[1])
+                N = int(lines[2])
                 signal_data = [list(map(int, line.split())) for line in lines[3:3 + N]]
 
                 indices = [item[0] for item in signal_data]
@@ -86,19 +92,13 @@ class SignalProcessorApp:
         if len(self.signals) < 2:
             messagebox.showerror("Error", "At least two signals are required for addition!")
             return
-        # Create a new signal array for the result
         result_signal = {}
-        for idx, (indices, signal) in enumerate(self.signals):
+        for _, (indices, signal) in enumerate(self.signals):
             for i, val in zip(indices, signal):
-                if i in result_signal:
-                    result_signal[i] += val
-                else:
-                    result_signal[i] = val
+                result_signal[i] = result_signal.get(i, 0) + val
 
-        # Convert result_signal back to lists for saving and display
         sorted_result = sorted(result_signal.items())
         indices, values = zip(*sorted_result) if sorted_result else ([], [])
-
         self.save_result("add", indices, values)
         messagebox.showinfo("Success", "Signals added successfully!")
 
@@ -106,13 +106,10 @@ class SignalProcessorApp:
         if not self.signals:
             messagebox.showerror("Error", "No signal loaded!")
             return
-
         try:
             constant = float(simpledialog.askstring("Input", "Enter constant to multiply:"))
             last_indices, last_signal = self.signals[-1]
-
             result_signal = [val * constant for val in last_signal]
-
             self.save_result("mul", last_indices, result_signal)
             messagebox.showinfo("Success", f"Signal multiplied by {constant} successfully!")
         except ValueError:
@@ -122,25 +119,14 @@ class SignalProcessorApp:
         if len(self.signals) < 2:
             messagebox.showerror("Error", "At least two signals are required for subtraction!")
             return
-
-        # Create a new signal array for the result
         result_signal = {}
         first_indices, first_signal = self.signals[0]
         second_indices, second_signal = self.signals[1]
-
-        for i, val in zip(first_indices, first_signal):
-            result_signal[i] = val
-
-        for i, val in zip(second_indices, second_signal):
-            if i in result_signal:
-                result_signal[i] -= val
-            else:
-                result_signal[i] = -val
-
-        # Convert result_signal back to lists for saving and display
+        result_signal = {i: v for i, v in zip(first_indices, first_signal)}
+        for i, v in zip(second_indices, second_signal):
+            result_signal[i] = result_signal.get(i, 0) - v
         sorted_result = sorted(result_signal.items())
         indices, values = zip(*sorted_result) if sorted_result else ([], [])
-
         self.save_result("sub", indices, values)
         messagebox.showinfo("Success", "Signals subtracted successfully!")
 
@@ -151,8 +137,6 @@ class SignalProcessorApp:
         try:
             k = int(simpledialog.askstring("Input", "Enter k (shift amount):"))
             last_indices, last_signal = self.signals[-1]
-
-            # Create the shifted signal
             shifted_indices = [index + k for index in last_indices]
             self.save_result("shift", shifted_indices, last_signal)
             messagebox.showinfo("Success", f"Signal shifted by {k} steps.")
@@ -163,27 +147,21 @@ class SignalProcessorApp:
         if not self.signals:
             messagebox.showerror("Error", "No signal loaded!")
             return
-        # Reverse signal (fold)
         last_indices, last_signal = self.signals[-1]
         reversed_signal = last_signal[::-1]
         reversed_indices = [-i for i in last_indices]
-
         self.save_result("rev", reversed_indices, reversed_signal)
         messagebox.showinfo("Success", "Signal reversed successfully!")
 
     def save_result(self, operation, indices, signal):
-
-        # Save the result to a file
-        prefix = 0
         result_file_path = os.path.join(self.results_dir, f"{operation}-result.txt")
         with open(result_file_path, 'w') as f:
-            f.write(f"{prefix}\n")
-            f.write(f"{prefix}\n")
+            f.write(f"0\n")  # Prefix as 0
+            f.write(f"0\n")
             f.write(f"{len(signal)}\n")  # Write the number of samples
             for index, value in zip(indices, signal):
-                f.write(f"{int(index)} {int(value)}\n")  # Write index and value
+                f.write(f"{int(index)} {int(value)}\n")
         messagebox.showinfo("Success", f"Result saved to {result_file_path}")
-
 
 # Main application
 if __name__ == "__main__":
