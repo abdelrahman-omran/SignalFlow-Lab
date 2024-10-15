@@ -139,7 +139,7 @@ class SignalProcessorApp:
         try:
             k = int(simpledialog.askstring("Input", "Enter k (shift amount):"))
             last_indices, last_signal = self.signals[-1]
-            shifted_indices = [index + k for index in last_indices]
+            shifted_indices = [index - k for index in last_indices]
             self.save_result("shift", shifted_indices, last_signal)
             messagebox.showinfo("Success", f"Signal shifted by {k} steps.")
         except ValueError:
@@ -150,8 +150,14 @@ class SignalProcessorApp:
             messagebox.showerror("Error", "No signal loaded!")
             return
         last_indices, last_signal = self.signals[-1]
+    
+        # Find the minimum and maximum indices
+        min_index = min(last_indices)
+        max_index = max(last_indices)    
+        # Reverse both indices and signal values
+        reversed_indices = [-(max_index - (i - min_index)) for i in last_indices]
         reversed_signal = last_signal[::-1]
-        reversed_indices = [-i for i in last_indices]
+
         self.save_result("rev", reversed_indices, reversed_signal)
         messagebox.showinfo("Success", "Signal reversed successfully!")
     
