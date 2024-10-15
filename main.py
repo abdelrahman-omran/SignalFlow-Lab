@@ -14,7 +14,7 @@ class SignalProcessorApp:
         self.signals = []
 
         # Create results directory if it doesn't exist
-        self.results_dir = "./results"
+        self.results_dir = "./results/task1"
         os.makedirs(self.results_dir, exist_ok=True)
 
         # Create tabs
@@ -99,7 +99,7 @@ class SignalProcessorApp:
         sorted_result = sorted(result_signal.items())
         indices, values = zip(*sorted_result) if sorted_result else ([], [])
 
-        self.save_result("addition", indices, values)
+        self.save_result("add", indices, values)
         messagebox.showinfo("Success", "Signals added successfully!")
 
     def multiply_signal(self):
@@ -113,7 +113,7 @@ class SignalProcessorApp:
 
             result_signal = [val * constant for val in last_signal]
 
-            self.save_result("multiplication", last_indices, result_signal)
+            self.save_result("mul", last_indices, result_signal)
             messagebox.showinfo("Success", f"Signal multiplied by {constant} successfully!")
         except ValueError:
             messagebox.showerror("Error", "Invalid constant value!")
@@ -141,7 +141,7 @@ class SignalProcessorApp:
         sorted_result = sorted(result_signal.items())
         indices, values = zip(*sorted_result) if sorted_result else ([], [])
 
-        self.save_result("subtraction", indices, values)
+        self.save_result("sub", indices, values)
         messagebox.showinfo("Success", "Signals subtracted successfully!")
 
     def shift_signal(self):
@@ -168,7 +168,7 @@ class SignalProcessorApp:
         reversed_signal = last_signal[::-1]
         reversed_indices = [-i for i in last_indices]
 
-        self.save_result("reverse", reversed_indices, reversed_signal)
+        self.save_result("rev", reversed_indices, reversed_signal)
         messagebox.showinfo("Success", "Signal reversed successfully!")
 
     def save_result(self, operation, indices, signal):
