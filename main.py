@@ -35,7 +35,7 @@ class SignalProcessorApp:
         self.notebook.add(task1_tab, text="Task 1")
         self.create_task1_tab(task1_tab)
 
-        # Tab 2: Task 2 (Placeholder for future operations)
+        # Tab 2: Task 2 for signal visualization (continuous/discrete)
         task2_tab = ttk.Frame(self.notebook)
         self.notebook.add(task2_tab, text="Task 2")
         self.create_task2_tab(task2_tab)
@@ -54,10 +54,14 @@ class SignalProcessorApp:
         tk.Button(button_frame, text="Visualize Signal", command=self.visualize_signal).grid(row=2, column=0, columnspan=3, padx=5, pady=5)
         tk.Button(button_frame, text="Clear Signals", command=self.clear_signals).grid(row=3, column=0, columnspan=3, padx=5, pady=5)
 
-
     def create_task2_tab(self, tab):
-        # Placeholder for future task 2 functionalities
-        ttk.Label(tab, text="Task 2 operations will be added here.").pack(pady=20)
+        """Task 2 Tab Layout: Allows user to display signals in continuous or discrete representation"""
+        button_frame = ttk.Frame(tab)
+        button_frame.pack(padx=10, pady=10, fill="both", expand=True)
+
+        # Buttons for continuous and discrete visualization
+        tk.Button(button_frame, text="Visualize as Continuous", command=lambda: self.visualize_signal_mode("continuous")).grid(row=0, column=0, padx=5, pady=5)
+        tk.Button(button_frame, text="Visualize as Discrete", command=lambda: self.visualize_signal_mode("discrete")).grid(row=0, column=1, padx=5, pady=5)
 
     def load_signal(self):
         file_path = filedialog.askopenfilename()
@@ -89,6 +93,26 @@ class SignalProcessorApp:
         plt.ylabel("Amplitude")
         plt.legend()
         plt.show()
+
+    def visualize_signal_mode(self, mode="continuous"):
+        """Visualize the signal in either continuous or discrete mode"""
+        if not self.signals:
+            messagebox.showerror("Error", "No signal loaded!")
+            return
+        
+        plt.figure()
+        for idx, (indices, signal) in enumerate(self.signals):
+            if mode == "discrete":
+                plt.stem(indices, signal, label=f"Signal {idx + 1}")  # Removed use_line_collection=True
+            else:
+                plt.plot(indices, signal, label=f"Signal {idx + 1}")
+        
+        plt.title(f"Signal Visualization - {mode.capitalize()} Mode")
+        plt.xlabel("Index")
+        plt.ylabel("Amplitude")
+        plt.legend()
+        plt.show()
+
 
     def add_signals(self):
         if len(self.signals) < 2:
@@ -167,16 +191,14 @@ class SignalProcessorApp:
         messagebox.showinfo("Success", "All signals cleared!")
 
     def save_result(self, operation, indices, signal):
-        result_file_path = os.path.join(self.results_dir, f"{operation}-result.txt")
-        with open(result_file_path, 'w') as f:
-            f.write(f"0\n")  # Prefix as 0
-            f.write(f"0\n")
-            f.write(f"{len(signal)}\n")  # Write the number of samples
-            for index, value in zip(indices, signal):
-                f.write(f"{int(index)} {int(value)}\n")
-        messagebox.showinfo("Success", f"Result saved to {result_file_path}")
+        result_file_path = os.path.join(self.results_dir, f"{operation}_result.txt")
+        with open(result_file_path, 'w') as file:
+            file.write(f"{operation.capitalize()} Result\n")
+            file.write("Index Amplitude\n")
+            for i, amp in zip(indices, signal):
+                file.write(f"{i} {amp}\n")
+        messagebox.showinfo("Success", f"Result saved to {result_file_path}!")
 
-# Main application
 if __name__ == "__main__":
     root = tk.Tk()
     app = SignalProcessorApp(root)
