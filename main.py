@@ -133,17 +133,21 @@ class SignalProcessorApp:
             return
         
         plt.figure()
+        colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']  # A list of colors to cycle through
+
         for idx, (indices, signal) in enumerate(self.signals):
+            color = colors[idx % len(colors)]  # Cycle through the color list
             if mode == "discrete":
-                plt.stem(indices, signal, label=f"Signal {idx + 1}")  # Removed use_line_collection=True
+                plt.stem(indices, signal, label=f"Signal {idx + 1}", linefmt=color, markerfmt=color+'o', basefmt=" ")
             else:
                 plt.plot(indices, signal, label=f"Signal {idx + 1}")
-        
+
         plt.title(f"Signal Visualization - {mode.capitalize()} Mode")
         plt.xlabel("Index")
         plt.ylabel("Amplitude")
         plt.legend()
         plt.show()
+
 
     def add_signals(self):
         if len(self.signals) < 2:
