@@ -268,6 +268,9 @@ class SignalProcessorApp:
         # Quantize the signal
         quantized_signal = np.zeros_like(last_signal)
 
+        # Encode interval indices in binary and associate with midpoints
+        encoded_indices = [f"{i:0{num_bits}b}" for i in range(len(midpoints))]
+
         # Iterate through each signal value
         for i, value in enumerate(last_signal):
             # Find the index of the interval that the value falls into
@@ -275,9 +278,14 @@ class SignalProcessorApp:
             # Map to the midpoint
             if 0 <= index < len(midpoints):  # Ensure the index is valid
                 quantized_signal[i] = midpoints[index]
+                last_indices[i] = encoded_indices[index]
+
+        # Format quantized_signal to two decimal places
         quantized_signal = [f"{value:.2f}" for value in quantized_signal]
+
         self.save_result("quantized", last_indices, quantized_signal)
         messagebox.showinfo("Success", "Signal quantized successfully!")
+
 
 
 
