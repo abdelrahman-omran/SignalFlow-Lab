@@ -89,6 +89,8 @@ class SignalProcessorApp:
 
         # Quantize Signal Button
         tk.Button(button_frame, text="Quantize Signal", command=self.quantize_signal).grid(row=0, column=0, padx=5, pady=5)
+        tk.Button(button_frame, text="display_quantization_results", command=self.display_quantization_results).grid(row=0, column=1, padx=5, pady=5)
+
 
     def generate_signal(self, signal_type):
         """Generates a sinusoidal or cosinusoidal signal."""
@@ -160,6 +162,37 @@ class SignalProcessorApp:
         plt.ylabel("Amplitude")
         plt.legend()
         plt.show()
+
+    def display_quantization_results(self):
+        self.load_signal()
+        self.load_signal()
+        plt.figure()
+        colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']  # A list of colors to cycle through
+        indices = np.arange(0,len(self.signals[-1][0]))
+        for idx, (index, signal) in enumerate(self.signals):
+            color = colors[idx % len(colors)]  # Cycle through the color list
+            plt.plot(indices, signal, label=f"Signal {idx + 1}")
+        self.load_signal()
+                # Define the x-axis values (indices)
+        x_values = indices  # Assuming sequential indices, e.g., 0, 1, 2, ...
+        y_values = self.signals[-1][1]
+        # Plotting
+        plt.step(x_values, y_values, where='post', label='Encoded Signal', color='b', linewidth=2)
+        plt.scatter(x_values, y_values, color='red')  # Mark each value for clarity
+
+        # Labels and title
+        plt.xlabel('Index')
+        plt.ylabel('Encoded Value')
+        plt.title('Digital Signal Visualization')
+
+        # Display encoded binary values at each point
+        for i, txt in enumerate(self.signals[-1][0]):
+            plt.text(x_values[i], y_values[i] + 0.02, txt, ha='center', fontsize=10)
+
+        plt.grid(True)
+        plt.legend()
+        plt.show()
+        messagebox.showinfo("Quantization Results")
 
     def add_signals(self):
         if len(self.signals) < 2:
@@ -239,6 +272,7 @@ class SignalProcessorApp:
             return
 
         last_indices, last_signal = self.signals[-1]
+        indices = last_indices
         max_value = np.max(last_signal)
         min_value = np.min(last_signal)
 
@@ -273,7 +307,7 @@ class SignalProcessorApp:
 
         # Initialize a list to store errors
         errors = np.zeros_like(last_signal)
-
+        sig_errors = np.zeros_like(last_signal)
         # Iterate through each signal value
         for i, value in enumerate(last_signal):
             # Find the index of the interval that the value falls into
@@ -283,10 +317,11 @@ class SignalProcessorApp:
                 quantized_signal[i] = midpoints[index]
                 last_indices[i] = encoded_indices[index]
                 # Calculate the error at the current index
-                errors[i] = abs(value - quantized_signal[i])
+                sig_errors[i] = abs(value - quantized_signal[i])
+                errors[i] = abs(value - quantized_signal[i])**2
 
         # Calculate mean error
-        mean_error = np.mean(errors)
+        error = np.mean(errors)
 
         # Format quantized_signal to two decimal places
         quantized_signal = [f"{value:.2f}" for value in quantized_signal]
@@ -294,15 +329,12 @@ class SignalProcessorApp:
         # Save results to a file
         output_path = "./results/task3/quantization_errors.txt"  # Change this path as needed
         with open(output_path, "w") as f:
-            f.write("Index, Original, Quantized, Error\n")
-            for i in range(len(last_signal)):
-                f.write(f"{i}, {last_signal[i]:.2f}, {quantized_signal[i]}, {errors[i]:.2f}\n")
-            f.write(f"Mean Error: {mean_error:.2f}\n")
+            f.write(f"Mean Error: {error:.2f}\n")
 
         self.save_result("quantized", last_indices, quantized_signal)
+        self.save_result("quantized_error", indices, sig_errors)
 
         messagebox.showinfo("Success", f"Signal quantized successfully! Errors saved to {output_path}")
-
 
 
 
@@ -323,6 +355,8 @@ class SignalProcessorApp:
             print(f"Saved result to {result_file}")
 
 if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+
     root = tk.Tk()
     app = SignalProcessorApp(root)
     root.mainloop()
