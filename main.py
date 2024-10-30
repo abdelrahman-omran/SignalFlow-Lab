@@ -20,7 +20,7 @@ class SignalProcessorApp:
         self.signals = []
 
         # Create results directory if it doesn't exist
-        self.results_dir = "./results/task2"
+        self.results_dir = "./results/task3"
         os.makedirs(self.results_dir, exist_ok=True)
 
         # Create toolbar
@@ -57,6 +57,11 @@ class SignalProcessorApp:
         self.notebook.add(task2_tab, text="Task 2")
         self.create_task2_tab(task2_tab)
 
+        # Tab 3: Task 3 for signal quantization
+        task3_tab = ttk.Frame(self.notebook)
+        self.notebook.add(task3_tab, text="Task 3")
+        self.create_task3_tab(task3_tab)
+
     def create_task1_tab(self, tab):
         # Task 1 Tab Layout: Buttons for signal operations
         button_frame = ttk.Frame(tab)
@@ -76,6 +81,14 @@ class SignalProcessorApp:
         # Add Signal Generation options in Task 2
         tk.Button(button_frame, text="Generate Sine Wave", command=lambda: self.generate_signal("sine")).grid(row=0, column=0, padx=5, pady=5)
         tk.Button(button_frame, text="Generate Cosine Wave", command=lambda: self.generate_signal("cosine")).grid(row=0, column=1, padx=5, pady=5)
+
+    def create_task3_tab(self, tab):
+        """Task 3 Tab Layout: Allows user to quantize a signal."""
+        button_frame = ttk.Frame(tab)
+        button_frame.pack(padx=10, pady=10, fill="both", expand=True)
+
+        # Quantize Signal Button
+        tk.Button(button_frame, text="Quantize Signal", command=self.quantize_signal).grid(row=0, column=0, padx=5, pady=5)
 
     def generate_signal(self, signal_type):
         """Generates a sinusoidal or cosinusoidal signal."""
@@ -148,7 +161,6 @@ class SignalProcessorApp:
         plt.legend()
         plt.show()
 
-
     def add_signals(self):
         if len(self.signals) < 2:
             messagebox.showerror("Error", "At least two signals are required for addition!")
@@ -181,17 +193,16 @@ class SignalProcessorApp:
             messagebox.showerror("Error", "At least two signals are required for subtraction!")
             return
         result_signal = {}
-        first_indices, first_signal = self.signals[0]
-        second_indices, second_signal = self.signals[1]
-
-        for i, val in zip(first_indices, first_signal):
-            result_signal[i] = result_signal.get(i, 0) + val
-        for i, val in zip(second_indices, second_signal):
-            result_signal[i] = result_signal.get(i, 0) - val
+        for idx, (indices, signal) in enumerate(self.signals):
+            for i, val in zip(indices, signal):
+                if idx == 0:
+                    result_signal[i] = val
+                else:
+                    result_signal[i] = result_signal.get(i, 0) - val
 
         sorted_result = sorted(result_signal.items())
         indices, values = zip(*sorted_result) if sorted_result else ([], [])
-        self.save_result("sub", indices, values)
+        self.save_result("subtract", indices, values)
         messagebox.showinfo("Success", "Signals subtracted successfully!")
 
     def shift_signal(self):
@@ -199,10 +210,10 @@ class SignalProcessorApp:
             messagebox.showerror("Error", "No signal loaded!")
             return
         try:
-            shift_amount = int(simpledialog.askstring("Input", "Enter shift amount (in samples):"))
+            shift_amount = int(simpledialog.askstring("Input", "Enter shift amount:"))
             last_indices, last_signal = self.signals[-1]
-            result_indices = [i + shift_amount for i in last_indices]
-            self.save_result("shift", result_indices, last_signal)
+            shifted_indices = [i + shift_amount for i in last_indices]
+            self.save_result("shift", shifted_indices, last_signal)
             messagebox.showinfo("Success", f"Signal shifted by {shift_amount} samples successfully!")
         except ValueError:
             messagebox.showerror("Error", "Invalid shift amount!")
@@ -212,23 +223,72 @@ class SignalProcessorApp:
             messagebox.showerror("Error", "No signal loaded!")
             return
         last_indices, last_signal = self.signals[-1]
-        result_signal = list(reversed(last_signal))
-        self.save_result("reverse", last_indices, result_signal)
+        reversed_signal = last_signal[::-1]
+        self.save_result("reverse", last_indices, reversed_signal)
         messagebox.showinfo("Success", "Signal reversed successfully!")
 
+    def quantize_signal(self):
+        # Convert last_signal to a NumPy array if it isn't already
+        if not self.signals:
+            messagebox.showerror("Error", "No signal loaded!")
+            return
+
+        method = simpledialog.askstring("Input", "Enter 'bits' for bits input or 'levels' for levels input:")
+        if method not in ['bits', 'levels']:
+            messagebox.showerror("Error", "Invalid input method. Please enter 'bits' or 'levels'.")
+            return
+
+        last_indices, last_signal = self.signals[-1]
+        max_value = np.max(last_signal)
+        min_value = np.min(last_signal)
+
+        # Calculate number of bits or levels
+        if method == 'bits':
+            num_bits = int(simpledialog.askstring("Input", "Enter number of bits:"))
+            num_levels = 2 ** num_bits
+        else:  # 'levels'
+            num_levels = int(simpledialog.askstring("Input", "Enter number of levels:"))
+            num_bits = int(np.ceil(np.log2(num_levels)))
+        # Calculate step size
+        
+        step_size = (max_value - min_value) / num_levels
+
+        # Create intervals based on step_size
+        intervals = np.arange(min_value, max_value + step_size, step_size)
+        print("Intervals:", intervals)
+
+        # Calculate midpoints of each interval
+        midpoints = (intervals[:-1] + intervals[1:]) / 2
+
+        # Quantize the signal
+        quantized_signal = np.zeros_like(last_signal)
+
+        # Iterate through each signal value
+        for i, value in enumerate(last_signal):
+            # Find the index of the interval that the value falls into
+            index = np.searchsorted(intervals, value, side='right') - 1
+            # Map to the midpoint
+            if 0 <= index < len(midpoints):  # Ensure the index is valid
+                quantized_signal[i] = midpoints[index]
+
+        self.save_result("quantized", last_indices, quantized_signal)
+        messagebox.showinfo("Success", "Signal quantized successfully!")
+
+
     def clear_signals(self):
+        """Clear all loaded signals."""
         self.signals = []
         messagebox.showinfo("Success", "All signals cleared!")
 
     def save_result(self, operation, indices, values):
-        result_file = os.path.join(self.results_dir, f"{operation}-result.txt")
-        with open(result_file, 'w') as f:
-            f.write("0\n")
-            f.write("0\n")
-            f.write(f"{len(indices)}\n")
-            for idx, val in zip(indices, values):
-                f.write(f"{idx} {val}\n")
-        print(f"Saved result to {result_file}")
+            result_file = os.path.join(self.results_dir, f"{operation}-result.txt")
+            with open(result_file, 'w') as f:
+                f.write("0\n")
+                f.write("0\n")
+                f.write(f"{len(indices)}\n")
+                for idx, val in zip(indices, values):
+                    f.write(f"{idx} {val}\n")
+            print(f"Saved result to {result_file}")
 
 if __name__ == "__main__":
     root = tk.Tk()
