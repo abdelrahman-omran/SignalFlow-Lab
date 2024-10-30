@@ -249,16 +249,21 @@ class SignalProcessorApp:
         else:  # 'levels'
             num_levels = int(simpledialog.askstring("Input", "Enter number of levels:"))
             num_bits = int(np.ceil(np.log2(num_levels)))
+
         # Calculate step size
-        
         step_size = (max_value - min_value) / num_levels
 
         # Create intervals based on step_size
         intervals = np.arange(min_value, max_value + step_size, step_size)
-        print("Intervals:", intervals)
+        # Format intervals to two decimal places
+        formatted_intervals = [f"{value:.2f}" for value in intervals]
+        print("Intervals:", formatted_intervals)
 
         # Calculate midpoints of each interval
         midpoints = (intervals[:-1] + intervals[1:]) / 2
+        # Format midpoints to two decimal places
+        formatted_midpoints = [f"{value:.2f}" for value in midpoints]
+        print("Midpoints:", formatted_midpoints)
 
         # Quantize the signal
         quantized_signal = np.zeros_like(last_signal)
@@ -270,9 +275,10 @@ class SignalProcessorApp:
             # Map to the midpoint
             if 0 <= index < len(midpoints):  # Ensure the index is valid
                 quantized_signal[i] = midpoints[index]
-
+        quantized_signal = [f"{value:.2f}" for value in quantized_signal]
         self.save_result("quantized", last_indices, quantized_signal)
         messagebox.showinfo("Success", "Signal quantized successfully!")
+
 
 
     def clear_signals(self):
