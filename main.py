@@ -271,6 +271,9 @@ class SignalProcessorApp:
         # Encode interval indices in binary and associate with midpoints
         encoded_indices = [f"{i:0{num_bits}b}" for i in range(len(midpoints))]
 
+        # Initialize a list to store errors
+        errors = np.zeros_like(last_signal)
+
         # Iterate through each signal value
         for i, value in enumerate(last_signal):
             # Find the index of the interval that the value falls into
@@ -279,12 +282,27 @@ class SignalProcessorApp:
             if 0 <= index < len(midpoints):  # Ensure the index is valid
                 quantized_signal[i] = midpoints[index]
                 last_indices[i] = encoded_indices[index]
+                # Calculate the error at the current index
+                errors[i] = abs(value - quantized_signal[i])
+
+        # Calculate mean error
+        mean_error = np.mean(errors)
 
         # Format quantized_signal to two decimal places
         quantized_signal = [f"{value:.2f}" for value in quantized_signal]
 
+        # Save results to a file
+        output_path = "./results/task3/quantization_errors.txt"  # Change this path as needed
+        with open(output_path, "w") as f:
+            f.write("Index, Original, Quantized, Error\n")
+            for i in range(len(last_signal)):
+                f.write(f"{i}, {last_signal[i]:.2f}, {quantized_signal[i]}, {errors[i]:.2f}\n")
+            f.write(f"Mean Error: {mean_error:.2f}\n")
+
         self.save_result("quantized", last_indices, quantized_signal)
-        messagebox.showinfo("Success", "Signal quantized successfully!")
+
+        messagebox.showinfo("Success", f"Signal quantized successfully! Errors saved to {output_path}")
+
 
 
 
