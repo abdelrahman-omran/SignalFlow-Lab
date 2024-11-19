@@ -104,7 +104,7 @@ class SignalProcessorApp:
         # Quantize Signal Button
         tk.Button(button_frame, text="", command=self.quantize_signal).grid(row=0, column=0, padx=5, pady=5)
         tk.Button(button_frame, text="Get Signal Derivative", command=self.signal_derivative).grid(row=0, column=1, padx=5, pady=5)
-        tk.Button(button_frame, text="Convolute two signals", command=self.display_quantization_results).grid(row=0, column=2, padx=5, pady=5)
+        tk.Button(button_frame, text="Convolute two signals", command=self.convolve).grid(row=0, column=2, padx=5, pady=5)
 
 
 
@@ -372,8 +372,25 @@ class SignalProcessorApp:
         self.save_result("first_derivative", dev1_indices, first_derivative)
         self.save_result("second_derivative", dev2_indices, second_derivative)
 
-    def convolute(self):
-        pass
+    def convolve(self):
+    # Length of the resulting signal will be len(x) + len(h) - 1
+        self.load_signal()
+        last_indices, x = self.signals[-1]
+
+        self.load_signal()
+        last_indices, h = self.signals[-1]
+
+        y = [0] * (len(x) + len(h) - 1)
+        y_indices  = []
+    # Perform the convolution operation manually
+        for n in range(len(y)):
+            y_indices.append(n)
+            for k in range(len(h)):
+                if n - k >= 0 and n - k < len(x):
+                    y[n] += x[n - k] * h[k]
+                    
+
+        self.save_result("Signals Convolution",y_indices, y)
 
     def clear_signals(self):
         """Clear all loaded signals."""
