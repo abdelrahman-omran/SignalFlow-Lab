@@ -18,7 +18,7 @@ class SignalProcessorApp:
 
         # List to store signals
         self.signals = []
-
+        self.N = 0
         # Create results directory if it doesn't exist
         self.results_dir = "./results/task3"
         os.makedirs(self.results_dir, exist_ok=True)
@@ -62,6 +62,11 @@ class SignalProcessorApp:
         self.notebook.add(task3_tab, text="Task 3")
         self.create_task3_tab(task3_tab)
 
+        # Tab 4: Task 4 for signal quantization
+        task4_tab = ttk.Frame(self.notebook)
+        self.notebook.add(task4_tab, text="Task 4")
+        self.create_task3_tab(task4_tab)
+
     def create_task1_tab(self, tab):
         # Task 1 Tab Layout: Buttons for signal operations
         button_frame = ttk.Frame(tab)
@@ -90,6 +95,17 @@ class SignalProcessorApp:
         # Quantize Signal Button
         tk.Button(button_frame, text="Quantize Signal", command=self.quantize_signal).grid(row=0, column=0, padx=5, pady=5)
         tk.Button(button_frame, text="display_quantization_results", command=self.display_quantization_results).grid(row=0, column=1, padx=5, pady=5)
+
+    def create_task3_tab(self, tab):
+        """Task 3 Tab Layout: Allows user to quantize a signal."""
+        button_frame = ttk.Frame(tab)
+        button_frame.pack(padx=10, pady=10, fill="both", expand=True)
+
+        # Quantize Signal Button
+        tk.Button(button_frame, text="", command=self.quantize_signal).grid(row=0, column=0, padx=5, pady=5)
+        tk.Button(button_frame, text="Get Signal Derivative", command=self.signal_derivative).grid(row=0, column=1, padx=5, pady=5)
+        tk.Button(button_frame, text="Convolute two signals", command=self.display_quantization_results).grid(row=0, column=2, padx=5, pady=5)
+
 
 
     def generate_signal(self, signal_type):
@@ -130,14 +146,14 @@ class SignalProcessorApp:
                 with open(file_path, 'r') as file:
                     lines = file.readlines()
                 start_index = int(lines[1])
-                N = int(lines[2])
-                signal_data = [list(map(float, line.split())) for line in lines[3:3 + N]]
+                self.N = int(lines[2])
+                signal_data = [list(map(float, line.split())) for line in lines[3:3 + self.N]]
 
                 indices = [item[0] for item in signal_data]
                 signal = [item[1] for item in signal_data]
 
                 self.signals.append((indices, signal))
-                messagebox.showinfo("Success", f"Loaded signal with {N} samples.")
+                messagebox.showinfo("Success", f"Loaded signal with {self.N} samples.")
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to load signal: {e}")
 
@@ -336,8 +352,28 @@ class SignalProcessorApp:
 
         messagebox.showinfo("Success", f"Signal quantized successfully! Errors saved to {output_path}")
 
+    def signal_derivative(self):
 
+        first_derivative = []
+        last_indices, last_signal = self.signals[-1]
+        dev1_indices = []
+        dev2_indices = []
+        for i in range(1, self.N):
+            first_derivative.append(last_signal[i] - last_signal[i - 1])
+            dev1_indices.append(i-1)
+        # Compute second derivative: Y(n) = x(n+1) - 2x(n) + x(n-1)
+        second_derivative = []  # Initialize with zero for n = 0
+        for i in range(1, self.N - 1):
+            second_derivative.append(last_signal[i + 1] - 2 * last_signal[i] + last_signal[i - 1])
+            dev2_indices.append(i-1)
 
+            #second_derivative.append(0)  # Append zero for n = N-1 (boundary condition)
+
+        self.save_result("first_derivative", dev1_indices, first_derivative)
+        self.save_result("second_derivative", dev2_indices, second_derivative)
+
+    def convolute(self):
+        pass
 
     def clear_signals(self):
         """Clear all loaded signals."""
@@ -351,7 +387,7 @@ class SignalProcessorApp:
                 f.write("0\n")
                 f.write(f"{len(indices)}\n")
                 for idx, val in zip(indices, values):
-                    f.write(f"{idx} {val}\n")
+                    f.write(f"{idx} {int(val)}\n")
             print(f"Saved result to {result_file}")
 
 if __name__ == "__main__":
