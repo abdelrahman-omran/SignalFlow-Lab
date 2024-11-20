@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-results_path = r"D:\GItHub Reops\DSP-tasks\results\task5\first_derivative-result.txt"
+results_path = "./results/task5/first_derivative-result.txt"
 #tests_path = "./tests/task3/quantization_result"
 flag = 0
 def ReadSignalFile(file_name):
@@ -70,8 +70,8 @@ def DerivativeTest1(file_name, Your_EncodedValues,Your_QuantizedValues):
 if __name__ == "__main__":
 
     Your_indices, Your_Values = ReadSignalFile(results_path)
-    DerivativeTest1("./testcases/Derivative testcases/1st_derivative_out.txt", Your_indices, Your_Values)
+    DerivativeTest1("./tests/task5/testcases/Derivative testcases/1st_derivative_out.txt", Your_indices, Your_Values)
 
-    results_path = r"D:\GItHub Reops\DSP-tasks\results\task5\second_derivative-result.txt"
+    results_path = "./results/task5/second_derivative-result.txt"
     Your_indices, Your_Values = ReadSignalFile(results_path)
-    DerivativeTest1("./testcases/Derivative testcases/2nd_derivative_out.txt", Your_indices, Your_Values)
+    DerivativeTest1("./tests/task5/testcases/Derivative testcases/2nd_derivative_out.txt", Your_indices, Your_Values)

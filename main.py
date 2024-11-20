@@ -65,7 +65,7 @@ class SignalProcessorApp:
         # Tab 4: Task 4 for signal quantization
         task4_tab = ttk.Frame(self.notebook)
         self.notebook.add(task4_tab, text="Task 4")
-        self.create_task3_tab(task4_tab)
+        self.create_task4_tab(task4_tab)
 
     def create_task1_tab(self, tab):
         # Task 1 Tab Layout: Buttons for signal operations
@@ -96,15 +96,16 @@ class SignalProcessorApp:
         tk.Button(button_frame, text="Quantize Signal", command=self.quantize_signal).grid(row=0, column=0, padx=5, pady=5)
         tk.Button(button_frame, text="display_quantization_results", command=self.display_quantization_results).grid(row=0, column=1, padx=5, pady=5)
 
-    def create_task3_tab(self, tab):
-        """Task 3 Tab Layout: Allows user to quantize a signal."""
+    def create_task4_tab(self, tab):
+        """Task 4 Tab Layout: Allows user to computer moving avg, get derivative and convolve."""
         button_frame = ttk.Frame(tab)
         button_frame.pack(padx=10, pady=10, fill="both", expand=True)
 
-        # Quantize Signal Button
+        # Buttons for Task 4 operations
         tk.Button(button_frame, text="", command=self.quantize_signal).grid(row=0, column=0, padx=5, pady=5)
         tk.Button(button_frame, text="Get Signal Derivative", command=self.signal_derivative).grid(row=0, column=1, padx=5, pady=5)
         tk.Button(button_frame, text="Convolute two signals", command=self.convolve).grid(row=0, column=2, padx=5, pady=5)
+        tk.Button(button_frame, text="Compute Moving Average", command=self.compute_moving_average).grid(row=0, column=3, padx=5, pady=5)
 
 
 
@@ -400,20 +401,59 @@ class SignalProcessorApp:
 
         self.save_result("Signals Convolution",y_indices, y)
 
+    def compute_moving_average(self):
+        """Compute the moving average for the last loaded signal."""
+        if not self.signals:
+            messagebox.showerror("Error", "No signal loaded!")
+            return
+
+        try:
+            window_size = int(simpledialog.askstring("Input", "Enter the window size (number of points):"))
+            if window_size <= 0:
+                messagebox.showerror("Error", "Window size must be greater than zero!")
+                return
+
+            indices, signal = self.signals[-1]
+
+            # Ensure the signal length is greater than or equal to the window size
+            if len(signal) < window_size:
+                messagebox.showerror("Error", "Signal length must be greater than or equal to the window size!")
+                return
+
+            # Compute moving average using convolution
+            window = np.ones(window_size) / window_size
+            moving_avg = np.convolve(signal, window, mode='valid')
+            [print(i) for i in moving_avg]
+            # Update indices for the reduced signal
+            result_indices = indices[:len(moving_avg)]
+
+            # Save and display the result
+            self.save_result("moving_average", result_indices, moving_avg)
+            messagebox.showinfo("Success", "Moving average computed successfully!")
+        except ValueError:
+            messagebox.showerror("Error", "Invalid window size!")
+
     def clear_signals(self):
         """Clear all loaded signals."""
         self.signals = []
         messagebox.showinfo("Success", "All signals cleared!")
 
     def save_result(self, operation, indices, values):
-            result_file = os.path.join(self.results_dir, f"{operation}-result.txt")
-            with open(result_file, 'w') as f:
-                f.write("0\n")
-                f.write("0\n")
-                f.write(f"{len(indices)}\n")
-                for idx, val in zip(indices, values):
-                    f.write(f"{int(idx)} {int(val)}\n")
-            print(f"Saved result to {result_file}")
+        """Save the result of an operation to a file."""
+        result_file = os.path.join(self.results_dir, f"{operation}-result.txt")
+        with open(result_file, 'w') as f:
+            f.write("0\n")
+            f.write("0\n")
+            f.write(f"{len(indices)}\n")
+            for idx, val in zip(indices, values):
+                # Check if the decimal part of the value is zero
+                formatted_val = round(float(val), 3)
+                if formatted_val.is_integer():
+                    f.write(f"{int(idx)} {int(formatted_val)}\n")
+                else:
+                    f.write(f"{int(idx)} {formatted_val}\n")
+        print(f"Saved result to {result_file}")
+
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
