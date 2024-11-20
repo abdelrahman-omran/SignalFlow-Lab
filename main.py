@@ -20,7 +20,7 @@ class SignalProcessorApp:
         self.signals = []
         self.N = 0
         # Create results directory if it doesn't exist
-        self.results_dir = "./results/task3"
+        self.results_dir = "./results/task5"
         os.makedirs(self.results_dir, exist_ok=True)
 
         # Create toolbar
