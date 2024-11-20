@@ -51,13 +51,13 @@ def DerivativeTest1(file_name, Your_EncodedValues,Your_QuantizedValues):
         return
     for i in range(len(Your_EncodedValues)):
         if(Your_EncodedValues[i]!=expectedEncodedValues[i]):
-            print("DerivativeTest Test case failed, your EncodedValues have different EncodedValues from the expected one") 
+            print("DerivativeTest Test case failed, your indices have different incdices from the expected one") 
             return
     for i in range(len(expectedQuantizedValues)):
         if abs(Your_QuantizedValues[i] - expectedQuantizedValues[i]) < 0.01:
             continue
         else:
-            print("DerivativeTest Test case failed, your QuantizedValues have different values from the expected one") 
+            print("DerivativeTest Test case failed, your values have different values from the expected one") 
             return
         
     global flag

@@ -354,13 +354,17 @@ class SignalProcessorApp:
 
     def signal_derivative(self):
 
+        self.load_signal()
+
         first_derivative = []
         last_indices, last_signal = self.signals[-1]
         dev1_indices = []
         dev2_indices = []
+
         for i in range(1, self.N):
             first_derivative.append(last_signal[i] - last_signal[i - 1])
             dev1_indices.append(i-1)
+
         # Compute second derivative: Y(n) = x(n+1) - 2x(n) + x(n-1)
         second_derivative = []  # Initialize with zero for n = 0
         for i in range(1, self.N - 1):
@@ -376,15 +380,19 @@ class SignalProcessorApp:
     # Length of the resulting signal will be len(x) + len(h) - 1
         self.load_signal()
         last_indices, x = self.signals[-1]
+        idx1 = last_indices[0]
 
         self.load_signal()
         last_indices, h = self.signals[-1]
-
+        idx2 = last_indices[0]
+        
+        start_idx = min(idx1, idx2)
         y = [0] * (len(x) + len(h) - 1)
         y_indices  = []
     # Perform the convolution operation manually
         for n in range(len(y)):
-            y_indices.append(n)
+            y_indices.append(start_idx)
+            start_idx = start_idx + 1
             for k in range(len(h)):
                 if n - k >= 0 and n - k < len(x):
                     y[n] += x[n - k] * h[k]
@@ -404,7 +412,7 @@ class SignalProcessorApp:
                 f.write("0\n")
                 f.write(f"{len(indices)}\n")
                 for idx, val in zip(indices, values):
-                    f.write(f"{idx} {int(val)}\n")
+                    f.write(f"{int(idx)} {int(val)}\n")
             print(f"Saved result to {result_file}")
 
 if __name__ == "__main__":
