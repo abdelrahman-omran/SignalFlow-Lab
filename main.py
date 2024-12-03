@@ -1,6 +1,8 @@
 import os
 import tkinter as tk
 import numpy as np
+import math
+import cmath
 from tkinter import ttk, filedialog, simpledialog
 import matplotlib.pyplot as plt
 from tkinter import messagebox
@@ -20,7 +22,7 @@ class SignalProcessorApp:
         self.signals = []
         self.N = 0
         # Create results directory if it doesn't exist
-        self.results_dir = "./results/task5"
+        self.results_dir = "./results/task7"
         os.makedirs(self.results_dir, exist_ok=True)
 
         # Create toolbar
@@ -62,10 +64,15 @@ class SignalProcessorApp:
         self.notebook.add(task3_tab, text="Task 3")
         self.create_task3_tab(task3_tab)
 
-        # Tab 4: Task 4 for signal quantization
-        task4_tab = ttk.Frame(self.notebook)
-        self.notebook.add(task4_tab, text="Task 4")
-        self.create_task4_tab(task4_tab)
+        # Tab 5: Task 5 for signal quantization
+        task5_tab = ttk.Frame(self.notebook)
+        self.notebook.add(task5_tab, text="Task 5")
+        self.create_task5_tab(task5_tab)
+
+         # Tab 7: Task 7 for signal quantization
+        task7_tab = ttk.Frame(self.notebook)
+        self.notebook.add(task7_tab, text="Task 7")
+        self.create_task7_tab(task7_tab)
 
     def create_task1_tab(self, tab):
         # Task 1 Tab Layout: Buttons for signal operations
@@ -96,17 +103,24 @@ class SignalProcessorApp:
         tk.Button(button_frame, text="Quantize Signal", command=self.quantize_signal).grid(row=0, column=0, padx=5, pady=5)
         tk.Button(button_frame, text="display_quantization_results", command=self.display_quantization_results).grid(row=0, column=1, padx=5, pady=5)
 
-    def create_task4_tab(self, tab):
-        """Task 4 Tab Layout: Allows user to computer moving avg, get derivative and convolve."""
+    def create_task5_tab(self, tab):
+        """Task 5 Tab Layout: Allows user to computer moving avg, get derivative and convolve."""
+        button_frame = ttk.Frame(tab)
+        button_frame.pack(padx=10, pady=10, fill="both", expand=True)
+
+        # Buttons for Task 5 operations
+        tk.Button(button_frame, text="Compute Moving Average", command=self.compute_moving_average).grid(row=0, column=0, padx=5, pady=5)
+        tk.Button(button_frame, text="Get Signal Derivative", command=self.signal_derivative).grid(row=0, column=1, padx=5, pady=5)
+        tk.Button(button_frame, text="Convolute two signals", command=self.convolve).grid(row=0, column=2, padx=5, pady=5)
+
+    def create_task7_tab(self, tab):
+        """Task 5 Tab Layout: Allows user to computer moving avg, get derivative and convolve."""
         button_frame = ttk.Frame(tab)
         button_frame.pack(padx=10, pady=10, fill="both", expand=True)
 
         # Buttons for Task 4 operations
-        tk.Button(button_frame, text="", command=self.quantize_signal).grid(row=0, column=0, padx=5, pady=5)
-        tk.Button(button_frame, text="Get Signal Derivative", command=self.signal_derivative).grid(row=0, column=1, padx=5, pady=5)
-        tk.Button(button_frame, text="Convolute two signals", command=self.convolve).grid(row=0, column=2, padx=5, pady=5)
-        tk.Button(button_frame, text="Compute Moving Average", command=self.compute_moving_average).grid(row=0, column=3, padx=5, pady=5)
-
+        tk.Button(button_frame, text="DFT", command=self.DFT).grid(row=0, column=0, padx=5, pady=5)
+        tk.Button(button_frame, text="IDFT", command=self.signal_derivative).grid(row=0, column=1, padx=5, pady=5)
 
 
     def generate_signal(self, signal_type):
@@ -432,7 +446,30 @@ class SignalProcessorApp:
             messagebox.showinfo("Success", "Moving average computed successfully!")
         except ValueError:
             messagebox.showerror("Error", "Invalid window size!")
+    def DFT(self):
+        self.load_signal()
+        print("Igot here")
+        indices, x = self.signals[-1]
+        sampling_frequency = int(simpledialog.askstring("Input", "Enter the sampling frequency"))
 
+        N = len(x)
+        dft_magnitude = []
+        dft_phase = []
+        for k in range(N):  # Loop over frequency bins
+            real_part = 0
+            imag_part = 0
+            for n in range(N):  # Sum over the time-domain samples
+                angle = -2 * math.pi * k * n / N
+                real_part += x[n] * math.cos(angle)
+                imag_part += x[n] * math.sin(angle)
+            magnitude = math.sqrt(real_part**2 + imag_part**2)
+            phase = math.atan2(imag_part, real_part)
+            dft_magnitude.append(magnitude)
+            dft_phase.append(phase)
+
+        self.save_result("DFT", dft_magnitude, dft_phase)
+
+        
     def clear_signals(self):
         """Clear all loaded signals."""
         self.signals = []
@@ -446,12 +483,24 @@ class SignalProcessorApp:
             f.write("0\n")
             f.write(f"{len(indices)}\n")
             for idx, val in zip(indices, values):
-                # Check if the decimal part of the value is zero
-                formatted_val = round(float(val), 3)
-                if formatted_val.is_integer():
-                    f.write(f"{int(idx)} {int(formatted_val)}\n")
+                # Format the output
+                if isinstance(idx, float) and idx != int(idx):  # Check if val is float
+                    idx_str = f"{idx:.15g}"  # Append 'f' to floats
                 else:
-                    f.write(f"{int(idx)} {formatted_val}\n")
+                    idx_str = int(idx)  # Format index with precision
+                if isinstance(val, float) and val != int(val):  # Check if val is float
+                    val_str = f"{val:.15g}"  # Append 'f' to floats
+                else:
+                    val_str = int(val)
+
+                f.write(f"{idx_str} {val_str}\n")
+
+
+                #formatted_val = round(float(val), 3)
+                # if formatted_val.is_integer():
+                #     f.write(f"{(idx)} {int(formatted_val)}\n")
+                # else:
+                #     f.write(f"{int(idx)} {formatted_val}\n")
         print(f"Saved result to {result_file}")
 
 
