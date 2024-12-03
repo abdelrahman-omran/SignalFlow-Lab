@@ -19,6 +19,7 @@ class SignalProcessorApp:
         # List to store signals
         self.signals = []
         self.N = 0
+        self.intfloat = 0
         # Create results directory if it doesn't exist
         self.results_dir = "./results/task5"
         os.makedirs(self.results_dir, exist_ok=True)
@@ -102,7 +103,7 @@ class SignalProcessorApp:
         button_frame.pack(padx=10, pady=10, fill="both", expand=True)
 
         # Quantize Signal Button
-        tk.Button(button_frame, text="", command=self.quantize_signal).grid(row=0, column=0, padx=5, pady=5)
+        tk.Button(button_frame, text="Calculate Moving Average", command=self.moving_average).grid(row=0, column=0, padx=5, pady=5)
         tk.Button(button_frame, text="Get Signal Derivative", command=self.signal_derivative).grid(row=0, column=1, padx=5, pady=5)
         tk.Button(button_frame, text="Convolute two signals", command=self.convolve).grid(row=0, column=2, padx=5, pady=5)
 
@@ -373,6 +374,7 @@ class SignalProcessorApp:
 
             #second_derivative.append(0)  # Append zero for n = N-1 (boundary condition)
 
+        self.intfloat = 0
         self.save_result("first_derivative", dev1_indices, first_derivative)
         self.save_result("second_derivative", dev2_indices, second_derivative)
 
@@ -397,8 +399,35 @@ class SignalProcessorApp:
                 if n - k >= 0 and n - k < len(x):
                     y[n] += x[n - k] * h[k]
                     
-
+        self.intfloat = 0
         self.save_result("Signals Convolution",y_indices, y)
+    def moving_average(self):
+        self.load_signal()
+        indices, values= self.signals[-1]
+        """
+        Compute the moving average of a signal with a given window size.
+
+        Args:
+            signal (list): The input signal x(n).
+            window_size (int): The number of points to include in averaging.
+
+        Returns:
+            list: The moving average y(n) of the input signal.
+        """
+        window_size = simpledialog.askinteger("Input", "Enter window size:")
+        if window_size <= 0:
+            raise ValueError("Window size must be greater than 0.")
+        if window_size > len(values):
+            raise ValueError("Window size cannot be larger than the signal length.")
+        
+        moving_avg = []
+        moving_avg_idx = []
+        for i in range(len(values) - window_size + 1):
+            window = values[i:i + window_size]
+            moving_avg.append(sum(window) / window_size)
+            moving_avg_idx.append(i)
+        self.intfloat = 1
+        self.save_result("Moving Average",moving_avg_idx, moving_avg)
 
     def clear_signals(self):
         """Clear all loaded signals."""
@@ -411,8 +440,12 @@ class SignalProcessorApp:
                 f.write("0\n")
                 f.write("0\n")
                 f.write(f"{len(indices)}\n")
-                for idx, val in zip(indices, values):
-                    f.write(f"{int(idx)} {int(val)}\n")
+                if(self.intfloat == 1):
+                    for idx, val in zip(indices, values):
+                        f.write(f"{int(idx)} {float(val):.3f}\n")
+                else:
+                    for idx, val in zip(indices, values):
+                        f.write(f"{int(idx)} {int(val)}\n")
             print(f"Saved result to {result_file}")
 
 if __name__ == "__main__":
