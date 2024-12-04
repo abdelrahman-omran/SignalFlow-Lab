@@ -62,10 +62,33 @@ def ReadSignalFile(file_name):
 
 if __name__ == "__main__":
     # Read the generated result
-    result_path = r"D:\GItHub Reops\DSP-tasks\results\task7\DFT-result.txt"
+    print("|| DFT Test ||")
+    result_path = "./results/task7/DFT-result.txt"
     result_amp, result_phase = ReadSignalFile(result_path)
 
-    output_path = r"D:\GItHub Reops\DSP-tasks\tests\task7\DFT\Outout_Signal_DFT.txt"
+    output_path = "./tests/task7/DFT/Output_Signal_DFT.txt"
+    output_amp, output_phase = ReadSignalFile(output_path)
+
+    amp_result = SignalComapreAmplitude(result_amp, output_amp)
+    print("Amplitude comparing is done")
+    if(amp_result):
+        print("result: Succeeded \n")
+    else:
+        print("result: Failed \n")
+
+    phase_result = SignalComaprePhaseShift(result_phase, output_phase)
+    print("Phase Shift comparing is done")
+    if(phase_result):
+        print("result: Succeeded \n")
+    else:
+        print("result: Failed \n")
+    #
+    print("|| IDFT Test ||")
+    # Read the generated result
+    result_path = "./results/task7/IDFT-result.txt"
+    result_amp, result_phase = ReadSignalFile(result_path)
+
+    output_path = "./tests/task7/IDFT/Output_Signal_IDFT.txt"
     output_amp, output_phase = ReadSignalFile(output_path)
 
     amp_result = SignalComapreAmplitude(result_amp, output_amp)
