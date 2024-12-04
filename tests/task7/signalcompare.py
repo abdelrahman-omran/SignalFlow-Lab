@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
 import math
+import os
+
+PROJECT_ROOT_DIR = os.getcwd()
 
 #Use to test the Amplitude of DFT and IDFT
 def SignalComapreAmplitude(SignalInput = [] ,SignalOutput= []):
@@ -61,12 +64,13 @@ def ReadSignalFile(file_name):
     return indices, values
 
 if __name__ == "__main__":
+    print()
     # Read the generated result
     print("|| DFT Test ||")
-    result_path = "./results/task7/DFT-result.txt"
+    result_path = PROJECT_ROOT_DIR + "/results/task7/DFT-result.txt"
     result_amp, result_phase = ReadSignalFile(result_path)
 
-    output_path = "./tests/task7/DFT/Output_Signal_DFT.txt"
+    output_path = PROJECT_ROOT_DIR + "/tests/task7/DFT/Output_Signal_DFT.txt"
     output_amp, output_phase = ReadSignalFile(output_path)
 
     amp_result = SignalComapreAmplitude(result_amp, output_amp)
@@ -85,10 +89,10 @@ if __name__ == "__main__":
     #
     print("|| IDFT Test ||")
     # Read the generated result
-    result_path = "./results/task7/IDFT-result.txt"
+    result_path = PROJECT_ROOT_DIR + "/results/task7/IDFT-result.txt"
     result_amp, result_phase = ReadSignalFile(result_path)
 
-    output_path = "./tests/task7/IDFT/Output_Signal_IDFT.txt"
+    output_path = PROJECT_ROOT_DIR + "/tests/task7/IDFT/Output_Signal_IDFT.txt"
     output_amp, output_phase = ReadSignalFile(output_path)
 
     amp_result = SignalComapreAmplitude(result_amp, output_amp)
