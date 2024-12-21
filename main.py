@@ -114,14 +114,14 @@ class SignalProcessorApp:
         tk.Button(button_frame, text="Convolute two signals", command=self.convolve).grid(row=0, column=2, padx=5, pady=5)
 
     def create_task7_tab(self, tab):
-        """Task 5 Tab Layout: Allows user to computer moving avg, get derivative and convolve."""
+        """Task 7 Tab Layout: Calculate DFT and IDFT."""
+
         button_frame = ttk.Frame(tab)
         button_frame.pack(padx=10, pady=10, fill="both", expand=True)
 
         # Buttons for Task 4 operations
         tk.Button(button_frame, text="DFT", command=self.DFT).grid(row=0, column=0, padx=5, pady=5)
-        tk.Button(button_frame, text="IDFT", command=self.signal_derivative).grid(row=0, column=1, padx=5, pady=5)
-
+        tk.Button(button_frame, text="IDFT", command=self.IDFT).grid(row=0, column=1, padx=5, pady=5)
 
     def generate_signal(self, signal_type):
         """Generates a sinusoidal or cosinusoidal signal."""
@@ -446,15 +446,16 @@ class SignalProcessorApp:
             messagebox.showinfo("Success", "Moving average computed successfully!")
         except ValueError:
             messagebox.showerror("Error", "Invalid window size!")
+
     def DFT(self):
         self.load_signal()
-        print("Igot here")
         indices, x = self.signals[-1]
         sampling_frequency = int(simpledialog.askstring("Input", "Enter the sampling frequency"))
-
+        
         N = len(x)
         dft_magnitude = []
         dft_phase = []
+        freq_indices = []
         for k in range(N):  # Loop over frequency bins
             real_part = 0
             imag_part = 0
@@ -466,9 +467,62 @@ class SignalProcessorApp:
             phase = math.atan2(imag_part, real_part)
             dft_magnitude.append(magnitude)
             dft_phase.append(phase)
+            freq_indices.append((2*math.pi)/(N*(1/sampling_frequency))*(k+1))
 
         self.save_result("DFT", dft_magnitude, dft_phase)
+        self.save_result("freq-amp", freq_indices, dft_magnitude)
+        self.save_result("freq-phase", freq_indices, dft_phase)
 
+
+
+    def IDFT(self):
+        """Inverse Discrete Fourier Transform to reconstruct the original signal."""
+        self.load_signal()
+        indices, x = self.signals[-1]
+
+        # Get the length of the signal
+        N = len(x)
+        # Read the magnitude and phase from the saved DFT results
+        dft_result_file = os.path.join(self.results_dir, "DFT-result.txt")
+        
+        if not os.path.exists(dft_result_file):
+            messagebox.showerror("Error", "DFT result file not found! Please compute DFT first.")
+            return
+
+        dft_magnitude = []
+        dft_phase = []
+
+        try:
+            with open(dft_result_file, 'r') as f:
+                f.readline()  # Skip the header lines
+                f.readline()
+                f.readline()
+                line = f.readline()
+                
+                while line:
+                    L = line.strip()
+                    if len(L.split(' ')) == 2:
+                        magnitude, phase = map(float, L.split(' '))
+                        dft_magnitude.append(magnitude)
+                        dft_phase.append(phase)
+                    line = f.readline()
+        except Exception as e:
+            messagebox.showerror("Error", f"Error reading DFT results: {e}")
+            return
+
+        # Perform the IDFT
+        reconstructed_signal = []
+        for n in range(N):  # Loop over time samples
+            real_part = 0
+            for k in range(N):  # Sum over frequency bins
+                angle = 2 * math.pi * k * n / N
+                real_part += dft_magnitude[k] * math.cos(dft_phase[k] + angle) / N
+            reconstructed_signal.append(real_part)
+
+        # Save and visualize the reconstructed signal
+        self.save_result("IDFT", indices, reconstructed_signal)
+        #self.visualize_result(indices, reconstructed_signal, "Reconstructed Signal (IDFT)")
+        messagebox.showinfo("Success", "Original signal reconstructed successfully!")
         
     def clear_signals(self):
         """Clear all loaded signals."""

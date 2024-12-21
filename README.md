@@ -31,7 +31,7 @@ python3 main.py
 > or `python main.py` if on windows
 
 ### Testing Steps
-- make sure you are at the projects root
+**make sure you are at the project's root directory**
 
 - execute the python file inside "tests/taskX" for the task you want to test
 ```bash
