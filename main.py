@@ -74,6 +74,11 @@ class SignalProcessorApp:
         self.notebook.add(task7_tab, text="Task 7")
         self.create_task7_tab(task7_tab)
 
+        # Tab 8: Task 8 for signal correlation
+        task8_tab = ttk.Frame(self.notebook)
+        self.notebook.add(task8_tab, text="Task 8")
+        self.create_task8_tab(task8_tab)
+
         # Tab 9: Task 9 for signal filteration
         task9_tab = ttk.Frame(self.notebook)
         self.notebook.add(task9_tab, text="Task 9")
@@ -127,6 +132,15 @@ class SignalProcessorApp:
         # Buttons for Task 4 operations
         tk.Button(button_frame, text="DFT", command=self.DFT).grid(row=0, column=0, padx=5, pady=5)
         tk.Button(button_frame, text="IDFT", command=self.IDFT).grid(row=0, column=1, padx=5, pady=5)
+    def create_task8_tab(self, tab):
+        """Task 8 Tab Layout: Correlate signal, compute time delay, and classify with max corr."""
+        button_frame = ttk.Frame(tab)
+        button_frame.pack(padx=10, pady=10, fill="both", expand=True)
+
+        # Buttons for Task 8 operations
+        tk.Button(button_frame, text="Correlate Signals", command=lambda:self.correlate_signals(True, True)).grid(row=0, column=0, padx=5, pady=5)
+        tk.Button(button_frame, text="Compute Time Delay", command=self.compute_time_delay).grid(row=0, column=1, padx=5, pady=5)
+        tk.Button(button_frame, text="Classify with Maximum Correlation", command=self.classify_max_corr).grid(row=0, column=2, padx=5, pady=5)
 
     def create_task9_tab(self, tab):
         """Task 7 Tab Layout: Calculate DFT and IDFT."""
@@ -538,6 +552,127 @@ class SignalProcessorApp:
         self.save_result("IDFT", indices, reconstructed_signal)
         #self.visualize_result(indices, reconstructed_signal, "Reconstructed Signal (IDFT)")
         messagebox.showinfo("Success", "Original signal reconstructed successfully!")
+    
+    def correlate_signals(self, save:bool, load:bool):
+        if(load):
+            self.load_signal()
+            self.load_signal()
+
+
+        if len(self.signals) < 2:
+            messagebox.showerror("Error", "Load two signals to calculate correlation.")
+            return
+
+        # Extract the two signals
+        indices1, x1 = self.signals[-2]
+        indices2, x2 = self.signals[-1]
+
+        # Ensure both signals have the same length
+        if len(x1) != len(x2):
+            messagebox.showerror("Error", "Signals must have the same length.")
+            return
+
+        N = len(x1)
+        correlation_result = []
+
+        # Compute autocorrelations
+        r11_0 = sum(x ** 2 for x in x1) / N
+        r22_0 = sum(x ** 2 for x in x2) / N
+
+        # Compute cross-correlation for each lag
+        for lag in range(N):
+            r12_l = sum(x1[n] * x2[(n + lag) % N] for n in range(N)) / N
+            normalized_r12 = r12_l / (r11_0 * r22_0) ** 0.5
+            correlation_result.append(normalized_r12)
+
+        # Save the correlation result
+        if(save):
+            self.save_result("Correlation", list(range(N)), correlation_result)
+        else:
+            return correlation_result
+
+
+
+    def compute_time_delay(self):
+        self.load_signal()
+        self.load_signal()
+        if len(self.signals) < 2:
+            messagebox.showerror("Error", "Load two signals to calculate the time delay.")
+            return
+        
+        # set sampling frequency
+        Fs = 100
+        #float(simpledialog.askstring("Input", "Enter sampling Frequency:"))
+
+        # Extract the two signals
+        indices1, x1 = self.signals[-2]
+        indices2, x2 = self.signals[-1]
+
+        # Ensure both signals have the same length
+        if len(x1) != len(x2):
+            messagebox.showerror("Error", "Signals must have the same length.")
+            return
+
+        N = len(x1)
+
+        # Step 1: Calculate the cross-correlation
+        r12 = []
+        for lag in range(N):
+            r12_l = sum(x1[n] * x2[(n + lag) % N] for n in range(N)) / N
+            r12.append(r12_l)
+
+        # Step 2: Find the maximum absolute value in the correlation
+        max_value = max(r12, key=abs)
+
+        # Step 3: Save its lag (index)
+        lag_j = r12.index(max_value)
+
+        # Step 4: Calculate the time delay
+        time_delay = lag_j * 1/Fs
+
+        # Display the results
+        messagebox.showinfo(
+            "Time Delay Calculation (Fs=100)",
+            f"Maximum Correlation: {max_value:.6f}\nLag (j): {lag_j}\nTime Delay: {time_delay:.6f} seconds"
+        )
+
+        # Optionally save the results to a file or variable
+        #self.save_result("Time Delay", ["Maximum Correlation", "Lag (j)", "Time Delay"], [max_value, lag_j, time_delay])
+
+
+    def classify_max_corr(self):
+        # load input
+        self.load_signal()
+
+        # calculate class A avg
+        directory_path = self.root_path + "/tests/08-correlation/Point3 Files/Class 1"
+        classA_corrs = []
+        for filename in os.listdir(directory_path):
+            self.signals.append(self.ReadSignalFile(os.path.join(directory_path, filename)))
+            corr = self.correlate_signals(False, False)
+            # take the max correlation value
+            classA_corrs.append(max(corr))
+            self.signals.pop()
+
+        # calculate class B avg
+        directory_path = self.root_path + "/tests/08-correlation/Point3 Files/Class 2"
+        classB_corrs = []
+        for filename in os.listdir(directory_path):
+            self.signals.append(self.ReadSignalFile(os.path.join(directory_path, filename)))
+            corr = self.correlate_signals(False, False)
+            # take the max correlation value
+            classB_corrs.append(max(corr))
+            self.signals.pop()
+
+        avgA = sum(classA_corrs) / len(classA_corrs)
+        avgB = sum(classB_corrs) / len(classB_corrs)
+
+        # classify
+        messagebox.showinfo("Classification", f"Average Correlation for Class A: {avgA:.6f}\nAverage Correlation for Class B: {avgB:.6f}")
+        if avgA > avgB:
+            messagebox.showinfo("Classification", "Signal belongs to Class A")
+        else:
+            messagebox.showinfo("Classification", "Signal belongs to Class B")
 
     def calculate_filter_order(self, transition_band, fs, window_type):
         delta_f = transition_band / fs
