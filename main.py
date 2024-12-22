@@ -79,6 +79,11 @@ class SignalProcessorApp:
         self.notebook.add(task8_tab, text="Task 8")
         self.create_task8_tab(task8_tab)
 
+        # Tab 9: Task 9 for signal filteration
+        task9_tab = ttk.Frame(self.notebook)
+        self.notebook.add(task9_tab, text="Task 9")
+        self.create_task9_tab(task9_tab)
+
     def create_task1_tab(self, tab):
         # Task 1 Tab Layout: Buttons for signal operations
         button_frame = ttk.Frame(tab)
@@ -136,6 +141,17 @@ class SignalProcessorApp:
         tk.Button(button_frame, text="Correlate Signals", command=lambda:self.correlate_signals(True, True)).grid(row=0, column=0, padx=5, pady=5)
         tk.Button(button_frame, text="Compute Time Delay", command=self.compute_time_delay).grid(row=0, column=1, padx=5, pady=5)
         tk.Button(button_frame, text="Classify with Maximum Correlation", command=self.classify_max_corr).grid(row=0, column=2, padx=5, pady=5)
+
+
+    def create_task9_tab(self, tab):
+        """Task 7 Tab Layout: Calculate DFT and IDFT."""
+
+        button_frame = ttk.Frame(tab)
+        button_frame.pack(padx=10, pady=10, fill="both", expand=True)
+
+        # Buttons for Task 4 operations
+        tk.Button(button_frame, text="Filter Coefficient", command=self.design_filter).grid(row=0, column=0, padx=5, pady=5)
+        tk.Button(button_frame, text="Apply Filter", command=self.convolve).grid(row=0, column=1, padx=5, pady=5)
 
 
 
@@ -659,6 +675,96 @@ class SignalProcessorApp:
             messagebox.showinfo("Classification", "Signal belongs to Class B")
 
 
+    def calculate_filter_order(self, transition_band, fs, window_type):
+        delta_f = transition_band / fs
+        if window_type == 'rectangular':
+            N = np.ceil(0.9 / delta_f)
+        elif window_type == 'hanning':
+            N = np.ceil(3.1 / delta_f)
+        elif window_type == 'hamming':
+            N = np.ceil(3.3 / delta_f)
+        elif window_type == 'blackman':
+            N = np.ceil(5.5 / delta_f)
+        
+        if(N%2!=1):
+            N = N + 1
+        return int(N)
+
+    def design_filter(self):
+
+        # Calculate filter order N
+        if StopBandAttenuation <= 21:
+            window_type = "rectangular"
+        elif StopBandAttenuation <= 44:
+            window_type = "hanning"
+        elif StopBandAttenuation <= 53:
+            window_type = "hamming"
+        elif StopBandAttenuation  <= 74:
+            window_type = "blackman"
+        N = self.calculate_filter_order(TransitionBand, FS, window_type)
+        
+        # Adjust N based on the window's constraints
+        n = np.arange(-N//2 + 1, N//2 + 1)
+        
+        fc = (FC + (TransitionBand/2)) / FS
+
+        
+        filt = []
+        index = []
+        for i in n:
+            if FilterType == "Low pass":
+                if i != 0:
+                    h = 2 * fc * np.sin(i * 2 * np.pi * fc) / (i * 2 * np.pi * fc)
+                else:
+                    h = 2 * fc
+            elif FilterType == "High pass":
+                if i != 0:
+                    h = -2 * fc * np.sin(i * 2 * np.pi * fc) / (i * 2 * np.pi * fc)
+                else:
+                    h = 1 - 2 * fc
+            elif FilterType == "Band pass":
+                f1 = (F1 - (TransitionBand/2)) / FS
+                f2 = (F2 + (TransitionBand/2)) / FS
+                if i != 0:
+                    h2 = (2 * f2 * (np.sin(i * 2 * np.pi * f2) / (i * 2 * np.pi * f2)))
+                    h1 = (2 * f1 * (np.sin(i * 2 * np.pi * f1) / (i * 2 * np.pi * f1)))
+                    h = h2 - h1
+                else:
+                    h = 2 * (f2 - f1)
+            elif FilterType == "Band stop":
+                f1 = (F1 + (TransitionBand/2)) / FS
+                f2 = (F2 - (TransitionBand/2)) / FS
+                if i != 0:
+                    h2 = (2 * f2 * (np.sin(i * 2 * np.pi * f2) / (i * 2 * np.pi * f2)))
+                    h1 = (2 * f1 * (np.sin(i * 2 * np.pi * f1) / (i * 2 * np.pi * f1)))
+                    h = h1 - h2                
+                else:
+                    h = 1 - 2 * (f2 - f1)
+
+            # Apply the window function
+            if window_type == 'rectangular':
+                w = 1
+            elif window_type == 'hanning':
+                w = 0.5 + 0.5 * np.cos((2 * np.pi * i) / N)
+            elif window_type == 'hamming':
+                w = 0.54 + 0.46 * np.cos((2 * np.pi * i) / N)
+            elif window_type == 'blackman':
+                w = 0.42 + 0.5 * np.cos((2 * np.pi * i) / (N - 1)) + 0.08 * np.cos((4 * np.pi * i) / (N - 1))
+
+
+            filt.append(h * w)
+            index.append(i)
+        
+        # Print filt and index values in the format: index value
+        #for i, val in enumerate(filt):
+         #   print(f"{index[i]} {val}")
+
+        self.save_result("Filter Coefficient", index, filt)
+
+
+
+
+
         
     def clear_signals(self):
         """Clear all loaded signals."""
@@ -726,7 +832,13 @@ class SignalProcessorApp:
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
-
+    FilterType = "Band stop"
+    FS = 1000
+    FC = 500
+    StopBandAttenuation = 60
+    F1 = 150
+    F2 = 250
+    TransitionBand = 50
     root = tk.Tk()
     app = SignalProcessorApp(root)
     root.mainloop()
