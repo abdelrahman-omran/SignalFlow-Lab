@@ -2,15 +2,15 @@ import os
 import tkinter as tk
 import numpy as np
 import math
-import cmath
 from tkinter import ttk, filedialog, simpledialog
 import matplotlib.pyplot as plt
 from tkinter import messagebox
-#import Filteration
+
 class SignalProcessorApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Signal Processor")
+        self.root_path = os.getcwd()
 
         # Make app responsive
         self.root.geometry("800x600")
@@ -22,7 +22,7 @@ class SignalProcessorApp:
         self.signals = []
         self.N = 0
         # Create results directory if it doesn't exist
-        self.results_dir = "./results/task9"
+        self.results_dir = os.getcwd() + "./results/task8"
         os.makedirs(self.results_dir, exist_ok=True)
 
         # Create toolbar
@@ -69,7 +69,7 @@ class SignalProcessorApp:
         self.notebook.add(task5_tab, text="Task 5")
         self.create_task5_tab(task5_tab)
 
-         # Tab 7: Task 7 for signal quantization
+        # Tab 7: Task 7 for signal quantization
         task7_tab = ttk.Frame(self.notebook)
         self.notebook.add(task7_tab, text="Task 7")
         self.create_task7_tab(task7_tab)
@@ -125,13 +125,13 @@ class SignalProcessorApp:
 
     def create_task7_tab(self, tab):
         """Task 7 Tab Layout: Calculate DFT and IDFT."""
-
         button_frame = ttk.Frame(tab)
         button_frame.pack(padx=10, pady=10, fill="both", expand=True)
 
         # Buttons for Task 4 operations
         tk.Button(button_frame, text="DFT", command=self.DFT).grid(row=0, column=0, padx=5, pady=5)
         tk.Button(button_frame, text="IDFT", command=self.IDFT).grid(row=0, column=1, padx=5, pady=5)
+
     def create_task8_tab(self, tab):
         """Task 8 Tab Layout: Correlate signal, compute time delay, and classify with max corr."""
         button_frame = ttk.Frame(tab)
@@ -151,6 +151,7 @@ class SignalProcessorApp:
         # Buttons for Task 4 operations
         tk.Button(button_frame, text="Filter Coefficient", command=self.design_filter).grid(row=0, column=0, padx=5, pady=5)
         tk.Button(button_frame, text="Apply Filter", command=self.convolve).grid(row=0, column=1, padx=5, pady=5)
+
 
     def generate_signal(self, signal_type):
         """Generates a sinusoidal or cosinusoidal signal."""
@@ -189,14 +190,17 @@ class SignalProcessorApp:
             try:
                 with open(file_path, 'r') as file:
                     lines = file.readlines()
-                start_index = int(lines[1])
-                self.N = int(lines[2])
-                signal_data = [list(map(float, line.split())) for line in lines[3:3 + self.N]]
+                if len(lines[0].split(' ')) == 2:
+                    start_index = int(lines[1])
+                    self.N = int(lines[2])
+                    signal_data = [list(map(float, line.split())) for line in lines[3:3 + self.N]]
 
-                indices = [item[0] for item in signal_data]
-                signal = [item[1] for item in signal_data]
+                    indices = [item[0] for item in signal_data]
+                    signal = [item[1] for item in signal_data]
 
-                self.signals.append((indices, signal))
+                    self.signals.append((indices, signal))
+                else:
+                    self.signals.append(self.ReadSignalFile(file_path))
                 messagebox.showinfo("Success", f"Loaded signal with {self.N} samples.")
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to load signal: {e}")
@@ -475,16 +479,14 @@ class SignalProcessorApp:
             messagebox.showinfo("Success", "Moving average computed successfully!")
         except ValueError:
             messagebox.showerror("Error", "Invalid window size!")
-
     def DFT(self):
         self.load_signal()
         indices, x = self.signals[-1]
         sampling_frequency = int(simpledialog.askstring("Input", "Enter the sampling frequency"))
-        
+
         N = len(x)
         dft_magnitude = []
         dft_phase = []
-        freq_indices = []
         for k in range(N):  # Loop over frequency bins
             real_part = 0
             imag_part = 0
@@ -496,13 +498,8 @@ class SignalProcessorApp:
             phase = math.atan2(imag_part, real_part)
             dft_magnitude.append(magnitude)
             dft_phase.append(phase)
-            freq_indices.append((2*math.pi)/(N*(1/sampling_frequency))*(k+1))
 
         self.save_result("DFT", dft_magnitude, dft_phase)
-        self.save_result("freq-amp", freq_indices, dft_magnitude)
-        self.save_result("freq-phase", freq_indices, dft_phase)
-
-
 
     def IDFT(self):
         """Inverse Discrete Fourier Transform to reconstruct the original signal."""
@@ -527,7 +524,7 @@ class SignalProcessorApp:
                 f.readline()
                 f.readline()
                 line = f.readline()
-                
+
                 while line:
                     L = line.strip()
                     if len(L.split(' ')) == 2:
@@ -552,7 +549,8 @@ class SignalProcessorApp:
         self.save_result("IDFT", indices, reconstructed_signal)
         #self.visualize_result(indices, reconstructed_signal, "Reconstructed Signal (IDFT)")
         messagebox.showinfo("Success", "Original signal reconstructed successfully!")
-    
+
+
     def correlate_signals(self, save:bool, load:bool):
         if(load):
             self.load_signal()
@@ -760,6 +758,11 @@ class SignalProcessorApp:
 
         self.save_result("Filter Coefficient", index, filt)
 
+
+
+
+
+        
     def clear_signals(self):
         """Clear all loaded signals."""
         self.signals = []
@@ -773,6 +776,7 @@ class SignalProcessorApp:
             f.write("0\n")
             f.write(f"{len(indices)}\n")
             for idx, val in zip(indices, values):
+                print(idx, val)
                 # Format the output
                 if isinstance(idx, float) and idx != int(idx):  # Check if val is float
                     idx_str = f"{idx:.15g}"  # Append 'f' to floats
@@ -792,12 +796,39 @@ class SignalProcessorApp:
                 # else:
                 #     f.write(f"{int(idx)} {formatted_val}\n")
         print(f"Saved result to {result_file}")
+    
+    def ReadSignalFile(self, file_name):
+        print(file_name)
+        """Reads the signal file and extracts indices and values."""
+        indices = []
+        values = []
+
+        with open(file_name, 'r') as f:
+            # Skip the first three lines (header info)
+            line = f.readline()
+            idx = 0
+            while line:
+                L = line.strip()
+                if len(L.split(' ')) == 2:
+                    parts = L.split(' ')
+                    index = float(parts[0])
+                    value = float(parts[1])
+                    indices.append(index)
+                    values.append(value)
+                    line = f.readline()
+                else:
+                    index = int(idx)
+                    value = float(L)
+                    indices.append(index)
+                    values.append(value)
+                    line = f.readline()
+                idx+=1
+
+        return indices, values
 
 
 if __name__ == "__main__":
-
     import matplotlib.pyplot as plt
-
     FilterType = "Band stop"
     FS = 1000
     FC = 500
@@ -805,7 +836,6 @@ if __name__ == "__main__":
     F1 = 150
     F2 = 250
     TransitionBand = 50
-
     root = tk.Tk()
     app = SignalProcessorApp(root)
     root.mainloop()
