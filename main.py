@@ -2,7 +2,6 @@ import os
 import tkinter as tk
 import numpy as np
 import math
-import cmath
 from tkinter import ttk, filedialog, simpledialog
 import matplotlib.pyplot as plt
 from tkinter import messagebox
@@ -11,6 +10,7 @@ class SignalProcessorApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Signal Processor")
+        self.root_path = os.getcwd()
 
         # Make app responsive
         self.root.geometry("800x600")
@@ -22,7 +22,7 @@ class SignalProcessorApp:
         self.signals = []
         self.N = 0
         # Create results directory if it doesn't exist
-        self.results_dir = "./results/task7"
+        self.results_dir = os.getcwd() + "./results/task8"
         os.makedirs(self.results_dir, exist_ok=True)
 
         # Create toolbar
@@ -69,10 +69,15 @@ class SignalProcessorApp:
         self.notebook.add(task5_tab, text="Task 5")
         self.create_task5_tab(task5_tab)
 
-         # Tab 7: Task 7 for signal quantization
+        # Tab 7: Task 7 for signal quantization
         task7_tab = ttk.Frame(self.notebook)
         self.notebook.add(task7_tab, text="Task 7")
         self.create_task7_tab(task7_tab)
+
+        # Tab 8: Task 8 for signal correlation
+        task8_tab = ttk.Frame(self.notebook)
+        self.notebook.add(task8_tab, text="Task 8")
+        self.create_task8_tab(task8_tab)
 
     def create_task1_tab(self, tab):
         # Task 1 Tab Layout: Buttons for signal operations
@@ -122,6 +127,17 @@ class SignalProcessorApp:
         tk.Button(button_frame, text="DFT", command=self.DFT).grid(row=0, column=0, padx=5, pady=5)
         tk.Button(button_frame, text="IDFT", command=self.IDFT).grid(row=0, column=1, padx=5, pady=5)
 
+    def create_task8_tab(self, tab):
+        """Task 8 Tab Layout: Correlate signal, compute time delay, and classify with max corr."""
+        button_frame = ttk.Frame(tab)
+        button_frame.pack(padx=10, pady=10, fill="both", expand=True)
+
+        # Buttons for Task 8 operations
+        tk.Button(button_frame, text="Correlate Signals", command=lambda:self.correlate_signals(True, True)).grid(row=0, column=0, padx=5, pady=5)
+        tk.Button(button_frame, text="Compute Time Delay", command=self.compute_time_delay).grid(row=0, column=1, padx=5, pady=5)
+        tk.Button(button_frame, text="Classify with Maximum Correlation", command=self.classify_max_corr).grid(row=0, column=2, padx=5, pady=5)
+
+
 
     def generate_signal(self, signal_type):
         """Generates a sinusoidal or cosinusoidal signal."""
@@ -160,14 +176,17 @@ class SignalProcessorApp:
             try:
                 with open(file_path, 'r') as file:
                     lines = file.readlines()
-                start_index = int(lines[1])
-                self.N = int(lines[2])
-                signal_data = [list(map(float, line.split())) for line in lines[3:3 + self.N]]
+                if len(lines[0].split(' ')) == 2:
+                    start_index = int(lines[1])
+                    self.N = int(lines[2])
+                    signal_data = [list(map(float, line.split())) for line in lines[3:3 + self.N]]
 
-                indices = [item[0] for item in signal_data]
-                signal = [item[1] for item in signal_data]
+                    indices = [item[0] for item in signal_data]
+                    signal = [item[1] for item in signal_data]
 
-                self.signals.append((indices, signal))
+                    self.signals.append((indices, signal))
+                else:
+                    self.signals.append(self.ReadSignalFile(file_path))
                 messagebox.showinfo("Success", f"Loaded signal with {self.N} samples.")
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to load signal: {e}")
@@ -518,6 +537,128 @@ class SignalProcessorApp:
         messagebox.showinfo("Success", "Original signal reconstructed successfully!")
 
 
+    def correlate_signals(self, save:bool, load:bool):
+        if(load):
+            self.load_signal()
+            self.load_signal()
+
+
+        if len(self.signals) < 2:
+            messagebox.showerror("Error", "Load two signals to calculate correlation.")
+            return
+
+        # Extract the two signals
+        indices1, x1 = self.signals[-2]
+        indices2, x2 = self.signals[-1]
+
+        # Ensure both signals have the same length
+        if len(x1) != len(x2):
+            messagebox.showerror("Error", "Signals must have the same length.")
+            return
+
+        N = len(x1)
+        correlation_result = []
+
+        # Compute autocorrelations
+        r11_0 = sum(x ** 2 for x in x1) / N
+        r22_0 = sum(x ** 2 for x in x2) / N
+
+        # Compute cross-correlation for each lag
+        for lag in range(N):
+            r12_l = sum(x1[n] * x2[(n + lag) % N] for n in range(N)) / N
+            normalized_r12 = r12_l / (r11_0 * r22_0) ** 0.5
+            correlation_result.append(normalized_r12)
+
+        # Save the correlation result
+        if(save):
+            self.save_result("Correlation", list(range(N)), correlation_result)
+        else:
+            return correlation_result
+
+
+
+    def compute_time_delay(self):
+        self.load_signal()
+        self.load_signal()
+        if len(self.signals) < 2:
+            messagebox.showerror("Error", "Load two signals to calculate the time delay.")
+            return
+        
+        # set sampling frequency
+        Fs = 100
+        #float(simpledialog.askstring("Input", "Enter sampling Frequency:"))
+
+        # Extract the two signals
+        indices1, x1 = self.signals[-2]
+        indices2, x2 = self.signals[-1]
+
+        # Ensure both signals have the same length
+        if len(x1) != len(x2):
+            messagebox.showerror("Error", "Signals must have the same length.")
+            return
+
+        N = len(x1)
+
+        # Step 1: Calculate the cross-correlation
+        r12 = []
+        for lag in range(N):
+            r12_l = sum(x1[n] * x2[(n + lag) % N] for n in range(N)) / N
+            r12.append(r12_l)
+
+        # Step 2: Find the maximum absolute value in the correlation
+        max_value = max(r12, key=abs)
+
+        # Step 3: Save its lag (index)
+        lag_j = r12.index(max_value)
+
+        # Step 4: Calculate the time delay
+        time_delay = lag_j * 1/Fs
+
+        # Display the results
+        messagebox.showinfo(
+            "Time Delay Calculation (Fs=100)",
+            f"Maximum Correlation: {max_value:.6f}\nLag (j): {lag_j}\nTime Delay: {time_delay:.6f} seconds"
+        )
+
+        # Optionally save the results to a file or variable
+        #self.save_result("Time Delay", ["Maximum Correlation", "Lag (j)", "Time Delay"], [max_value, lag_j, time_delay])
+
+
+    def classify_max_corr(self):
+        # load input
+        self.load_signal()
+
+        # calculate class A avg
+        directory_path = self.root_path + "/tests/08-correlation/Point3 Files/Class 1"
+        classA_corrs = []
+        for filename in os.listdir(directory_path):
+            self.signals.append(self.ReadSignalFile(os.path.join(directory_path, filename)))
+            corr = self.correlate_signals(False, False)
+            # take the max correlation value
+            classA_corrs.append(max(corr))
+            self.signals.pop()
+
+        # calculate class B avg
+        directory_path = self.root_path + "/tests/08-correlation/Point3 Files/Class 2"
+        classB_corrs = []
+        for filename in os.listdir(directory_path):
+            self.signals.append(self.ReadSignalFile(os.path.join(directory_path, filename)))
+            corr = self.correlate_signals(False, False)
+            # take the max correlation value
+            classB_corrs.append(max(corr))
+            self.signals.pop()
+
+        avgA = sum(classA_corrs) / len(classA_corrs)
+        avgB = sum(classB_corrs) / len(classB_corrs)
+
+        # classify
+        messagebox.showinfo("Classification", f"Average Correlation for Class A: {avgA:.6f}\nAverage Correlation for Class B: {avgB:.6f}")
+        if avgA > avgB:
+            messagebox.showinfo("Classification", "Signal belongs to Class A")
+        else:
+            messagebox.showinfo("Classification", "Signal belongs to Class B")
+
+
         
     def clear_signals(self):
         """Clear all loaded signals."""
@@ -532,6 +673,7 @@ class SignalProcessorApp:
             f.write("0\n")
             f.write(f"{len(indices)}\n")
             for idx, val in zip(indices, values):
+                print(idx, val)
                 # Format the output
                 if isinstance(idx, float) and idx != int(idx):  # Check if val is float
                     idx_str = f"{idx:.15g}"  # Append 'f' to floats
@@ -551,6 +693,35 @@ class SignalProcessorApp:
                 # else:
                 #     f.write(f"{int(idx)} {formatted_val}\n")
         print(f"Saved result to {result_file}")
+    
+    def ReadSignalFile(self, file_name):
+        print(file_name)
+        """Reads the signal file and extracts indices and values."""
+        indices = []
+        values = []
+
+        with open(file_name, 'r') as f:
+            # Skip the first three lines (header info)
+            line = f.readline()
+            idx = 0
+            while line:
+                L = line.strip()
+                if len(L.split(' ')) == 2:
+                    parts = L.split(' ')
+                    index = float(parts[0])
+                    value = float(parts[1])
+                    indices.append(index)
+                    values.append(value)
+                    line = f.readline()
+                else:
+                    index = int(idx)
+                    value = float(L)
+                    indices.append(index)
+                    values.append(value)
+                    line = f.readline()
+                idx+=1
+
+        return indices, values
 
 
 if __name__ == "__main__":
