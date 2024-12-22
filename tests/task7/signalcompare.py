@@ -13,7 +13,7 @@ def SignalComapreAmplitude(SignalInput = [] ,SignalOutput= []):
         for i in range(len(SignalInput)):
             if abs(SignalInput[i]-SignalOutput[i])>0.001:
                 return False
-           # elif SignalInput[i]!=SignalOutput[i]:
+            elif SignalInput[i]!=SignalOutput[i]:
                 return False
         return True
 
@@ -64,13 +64,8 @@ def ReadSignalFile(file_name):
     return indices, values
 
 if __name__ == "__main__":
-    # # Read the generated result
-    # result_path = r"D:\GItHub Reops\DSP-tasks\results\task7\DFT-result.txt"
-    # result_amp, result_phase = ReadSignalFile(result_path)
-
-    # output_path = r"D:\GItHub Reops\DSP-tasks\tests\task7\DFT\Outout_Signal_DFT.txt"
-    # print()
-    # # Read the generated result
+    print()
+    # Read the generated result
     print("|| DFT Test ||")
     result_path = PROJECT_ROOT_DIR + "/results/task7/DFT-result.txt"
     result_amp, result_phase = ReadSignalFile(result_path)
