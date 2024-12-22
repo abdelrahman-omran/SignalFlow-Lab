@@ -142,6 +142,7 @@ class SignalProcessorApp:
         tk.Button(button_frame, text="Compute Time Delay", command=self.compute_time_delay).grid(row=0, column=1, padx=5, pady=5)
         tk.Button(button_frame, text="Classify with Maximum Correlation", command=self.classify_max_corr).grid(row=0, column=2, padx=5, pady=5)
 
+
     def create_task9_tab(self, tab):
         """Task 7 Tab Layout: Calculate DFT and IDFT."""
 
@@ -151,6 +152,7 @@ class SignalProcessorApp:
         # Buttons for Task 4 operations
         tk.Button(button_frame, text="Filter Coefficient", command=self.design_filter).grid(row=0, column=0, padx=5, pady=5)
         tk.Button(button_frame, text="Apply Filter", command=self.convolve).grid(row=0, column=1, padx=5, pady=5)
+
 
 
     def generate_signal(self, signal_type):
@@ -671,6 +673,7 @@ class SignalProcessorApp:
             messagebox.showinfo("Classification", "Signal belongs to Class A")
         else:
             messagebox.showinfo("Classification", "Signal belongs to Class B")
+
 
     def calculate_filter_order(self, transition_band, fs, window_type):
         delta_f = transition_band / fs
