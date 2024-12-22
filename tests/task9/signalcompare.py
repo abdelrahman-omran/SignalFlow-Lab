@@ -1,7 +1,41 @@
 #!/usr/bin/env python3
+
+import math
 import os
 
 PROJECT_ROOT_DIR = os.getcwd()
+
+#Use to test the Amplitude of DFT and IDFT
+def SignalComapreAmplitude(SignalInput = [] ,SignalOutput= []):
+    if len(SignalInput) != len(SignalOutput):
+        return False
+    else:
+        for i in range(len(SignalInput)):
+            if abs(SignalInput[i]-SignalOutput[i])>0.001:
+                return False
+            elif SignalInput[i]!=SignalOutput[i]:
+                return False
+        return True
+
+def RoundPhaseShift(P):
+    while P<0:
+        p+=2*math.pi
+    return float(P%(2*math.pi))
+
+#Use to test the PhaseShift of DFT
+def SignalComaprePhaseShift(SignalInput = [] ,SignalOutput= []):
+    if len(SignalInput) != len(SignalOutput):
+        return False
+    else:
+        for i in range(len(SignalInput)):
+            A=round(SignalInput[i])
+            B=round(SignalOutput[i])
+            if abs(A-B)>0.0001:
+                return False
+            elif A!=B:
+                return False
+        return True
+
 
 def ReadSignalFile(file_name):
     """Reads the signal file and extracts indices and values."""
@@ -19,7 +53,7 @@ def ReadSignalFile(file_name):
             L = line.strip()
             if len(L.split(' ')) == 2:
                 parts = L.split(' ')
-                index = int(parts[0])
+                index = float(parts[0])
                 value = float(parts[1])
                 indices.append(index)
                 values.append(value)
@@ -29,51 +63,48 @@ def ReadSignalFile(file_name):
 
     return indices, values
 
-def Compare_Signals(file_name,Your_indices,Your_samples):      
-    expected_indices=[]
-    expected_samples=[]
-    with open(file_name, 'r') as f:
-        line = f.readline()
-        line = f.readline()
-        line = f.readline()
-        line = f.readline()
-        while line:
-            # process line
-            L=line.strip()
-            if len(L.split(' '))==2:
-                L=line.split(' ')
-                V1=int(L[0])
-                V2=float(L[1])
-                expected_indices.append(V1)
-                expected_samples.append(V2)
-                line = f.readline()
-            else:
-                break
-    print("Current Output Test file is: ")
-    print(file_name)
-    print("\n")
-    if (len(expected_samples)!=len(Your_samples)) and (len(expected_indices)!=len(Your_indices)):
-        print("Test case failed, your signal have different length from the expected one")
-        return
-    for i in range(len(Your_indices)):
-        if(Your_indices[i]!=expected_indices[i]):
-            print("Test case failed, your signal have different indicies from the expected one") 
-            return
-    for i in range(len(expected_samples)):
-        if abs(Your_samples[i] - expected_samples[i]) < 0.01:
-            continue
-        else:
-            print("Test case failed, your signal have different values from the expected one") 
-            return
-    print("Test case passed successfully")
-
 if __name__ == "__main__":
+    print()
+    # Read the generated result
+    print("|| DFT Test ||")
+    result_path = PROJECT_ROOT_DIR + "/results/task7/DFT-result.txt"
+    result_amp, result_phase = ReadSignalFile(result_path)
 
-    print("|| Filter Test ||")
-    result_path = PROJECT_ROOT_DIR + "/results/Task9/Signals Convolution-result.txt"
-    result_indices, result_values = ReadSignalFile(result_path)
+    output_path = PROJECT_ROOT_DIR + "/tests/task7/DFT/Output_Signal_DFT.txt"
+    output_amp, output_phase = ReadSignalFile(output_path)
 
-    output_path = PROJECT_ROOT_DIR + "/tests/task9/FIR test cases/Testcase 8/ecg_band_stop_filtered.txt"
-    #output_indices, output_values = ReadSignalFile(output_path)
-    print("lol")
-    Compare_Signals(output_path, result_indices, result_values)
+    amp_result = SignalComapreAmplitude(result_amp, output_amp)
+    print("Amplitude comparing is done")
+    if(amp_result):
+        print("result: Succeeded \n")
+    else:
+        print("result: Failed \n")
+
+    phase_result = SignalComaprePhaseShift(result_phase, output_phase)
+    print("Phase Shift comparing is done")
+    if(phase_result):
+        print("result: Succeeded \n")
+    else:
+        print("result: Failed \n")
+    #
+    print("|| IDFT Test ||")
+    # Read the generated result
+    result_path = PROJECT_ROOT_DIR + "/results/task7/IDFT-result.txt"
+    result_amp, result_phase = ReadSignalFile(result_path)
+
+    output_path = PROJECT_ROOT_DIR + "/tests/task7/IDFT/Output_Signal_IDFT.txt"
+    output_amp, output_phase = ReadSignalFile(output_path)
+
+    amp_result = SignalComapreAmplitude(result_amp, output_amp)
+    print("Amplitude comparing is done")
+    if(amp_result):
+        print("result: Succeeded \n")
+    else:
+        print("result: Failed \n")
+
+    phase_result = SignalComaprePhaseShift(result_phase, output_phase)
+    print("Phase Shift comparing is done")
+    if(phase_result):
+        print("result: Succeeded \n")
+    else:
+        print("result: Failed \n")
