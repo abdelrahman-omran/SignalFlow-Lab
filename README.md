@@ -1,4 +1,4 @@
-Programming tasks & solutions for \[SCO 321\] Digital Signal Processing course.
+Digital Signal Processing Library.
 
 ### Project File Structure
 ```
