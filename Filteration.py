@@ -2,7 +2,7 @@ import numpy as np
 import scipy.signal as signal
 import matplotlib.pyplot as plt
 # Import the function from main.py
-from main import SignalProcessorApp
+from old_main import SignalProcessorApp
 def calculate_filter_order(transition_band, fs, window_type):
     delta_f = transition_band / fs
     if window_type == 'rectangular':
