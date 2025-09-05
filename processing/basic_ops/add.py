@@ -1,4 +1,4 @@
-def add_signals(signal1, signal2):
+def add(signal1, signal2):
     indices1, values1 = signal1
     indices2, values2 = signal2
 
