@@ -1,96 +1,211 @@
 import os
 import tkinter as tk
-from tkinter import ttk, messagebox, simpledialog
+from tkinter import ttk, messagebox, simpledialog, filedialog
+import importlib
+import inspect
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
 
-from processing.generation import generate_sine
-from processing.arithmetic import multiply_signal
-from processing.visualization import visualize_signal_mode
-from processing.io import ensure_results_dir, save_result
+from processing.io import *
+# Example imports (replace with actual functions in each package)
+from processing.generation import *
+from processing.basic_ops import *
+
+PACKAGE_FUNCTIONS = {
+    "Generation": ["sine", "cosine"],
+    "basic_ops": ["add", "subtract", "multiply", "shift", "reverse"],
+    # Add more packages/functions as you refactor
+}
 
 
 class SignalProcessorApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Signal Processor (Minimal)")
+        self.root.title("Signal Processor (Tabbed)")
         self.root.geometry("800x600")
         self.root.minsize(600, 400)
 
-        # App state
         self.signals = []  # list of tuples: (indices, values)
-        self.results_dir = ensure_results_dir(os.path.join(os.getcwd(), "results", "minimal"))
+        self.results_dir = ensure_results_dir(os.path.join(os.getcwd(), "results"))
 
-        # Layout
         self.root.columnconfigure(0, weight=1)
-        self.root.rowconfigure(1, weight=1)
+        self.root.rowconfigure(0, weight=1)
 
-        self._create_toolbar()
-
-        # Notebook (optional now, ready for future tabs)
         self.notebook = ttk.Notebook(self.root)
-        self.notebook.grid(row=1, column=0, sticky="nsew")
-        self._add_home_tab()
+        self.notebook.grid(row=0, column=0, sticky="nsew")
 
-    def _create_toolbar(self):
-        toolbar = tk.Frame(self.root, bd=1, relief=tk.RAISED)
-        toolbar.grid(row=0, column=0, sticky="ew")
+        self._create_tabs()
 
-        tk.Button(toolbar, text="Generate Sine", command=self.on_generate_sine).pack(side=tk.LEFT, padx=4, pady=4)
-        tk.Button(toolbar, text="Multiply ×C", command=self.on_multiply).pack(side=tk.LEFT, padx=4, pady=4)
-        tk.Button(toolbar, text="Plot (Continuous)", command=lambda: self.on_visualize("continuous")).pack(side=tk.LEFT, padx=4, pady=4)
-        tk.Button(toolbar, text="Plot (Discrete)", command=lambda: self.on_visualize("discrete")).pack(side=tk.LEFT, padx=4, pady=4)
-        tk.Button(toolbar, text="Clear Signals", command=self.on_clear).pack(side=tk.LEFT, padx=4, pady=4)
+    def _create_tabs(self):
+        # Function tabs
+        for package_name, functions in PACKAGE_FUNCTIONS.items():
+            frame = ttk.Frame(self.notebook)
+            self.notebook.add(frame, text=package_name)
+            frame.columnconfigure(0, weight=1)
 
-    def _add_home_tab(self):
+            for func_name in functions:
+                btn = ttk.Button(frame, text=func_name.replace("_", " ").title(),
+                                 command=lambda f=func_name, p=package_name: self._run_function(p, f))
+                btn.pack(fill="x", padx=10, pady=5)
+
+        # Visualization tab
+        self._create_visualization_tab()
+
+    def _run_function(self, package_name, func_name):
+        try:
+            module_name = f"processing.{package_name.lower().replace(' ', '_')}.{func_name}"
+            module = importlib.import_module(module_name)
+
+            # Get the first callable function in the module
+            func = None
+            for name, obj in inspect.getmembers(module):
+                if inspect.isfunction(obj):
+                    func = obj
+                    break
+
+            if not func:
+                messagebox.showerror("Error", f"No callable found in {func_name}")
+                return
+
+            params = {}
+
+            if package_name == "basic_ops":
+                sig = inspect.signature(func)
+
+                for param_name in sig.parameters.keys():
+                    file_path = filedialog.askopenfilename(
+                        title=f"Select {param_name} file",
+                        initialdir=self.results_dir,
+                        filetypes=[("Text Files", "*.txt")]
+                    )
+                    if not file_path:
+                        return
+
+                    # 🔹 load directly here, no separate function
+                    indices, values = [], []
+                    with open(file_path, 'r') as f:
+                        lines = f.readlines()[3:]  # skip metadata
+                        for line in lines:
+                            i, v = line.strip().split()
+                            indices.append(float(i))
+                            values.append(float(v))
+
+                    params[param_name] = (indices, values)
+
+            else:
+                # for generation (still ask numbers, maybe a file if needed)
+                sig = inspect.signature(func)
+                for param_name, param in sig.parameters.items():
+                    if "signal" in param_name:
+                        file_path = filedialog.askopenfilename(
+                            title=f"Select {param_name} file",
+                            initialdir=self.results_dir,
+                            filetypes=[("Text Files", "*.txt")]
+                        )
+                        if not file_path:
+                            return
+
+                        indices, values = [], []
+                        with open(file_path, 'r') as f:
+                            lines = f.readlines()[3:]
+                            for line in lines:
+                                i, v = line.strip().split()
+                                indices.append(float(i))
+                                values.append(float(v))
+
+                        params[param_name] = (indices, values)
+                    else:
+                        value = simpledialog.askfloat("Input Required", f"Enter value for {param_name}:")
+                        if value is None:
+                            return
+                        params[param_name] = value
+
+            # run the function
+            result = func(**params)
+
+            if result:
+                self.signals.append(result)
+                path = save_result(func_name, result[0], result[1], self.results_dir)
+                messagebox.showinfo("Success", f"{func_name} executed and saved:\n{path}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to run {func_name}: {e}")
+
+    # ---------------- VISUALIZATION ----------------
+    def _create_visualization_tab(self):
         frame = ttk.Frame(self.notebook)
-        self.notebook.add(frame, text="Home")
-        lbl = ttk.Label(frame, text="Minimal refactor: Generate → Multiply → Visualize", anchor="center")
-        lbl.pack(pady=20)
+        self.notebook.add(frame, text="Visualization")
 
-    # ===== Handlers =====
+        frame.columnconfigure(1, weight=1)
+        frame.rowconfigure(0, weight=1)
 
-    def on_generate_sine(self):
-        try:
-            A = simpledialog.askfloat("Sine", "Amplitude (A):", minvalue=0.0)
-            if A is None: return
-            theta = simpledialog.askfloat("Sine", "Phase (θ in radians):", initialvalue=0.0)
-            if theta is None: return
-            f_analog = simpledialog.askfloat("Sine", "Analog frequency (Hz):", minvalue=0.0)
-            if f_analog is None: return
-            f_sampling = simpledialog.askfloat("Sine", "Sampling frequency (Hz):", minvalue=0.0)
-            if f_sampling is None: return
+        self.file_listbox = tk.Listbox(frame, height=15)
+        self.file_listbox.grid(row=0, column=0, sticky="ns", padx=5, pady=5)
 
-            indices, values = generate_sine(A, theta, f_analog, f_sampling, duration=1.0)
-            self.signals.append((indices, values))
+        button_frame = tk.Frame(frame)
+        button_frame.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
+        ttk.Button(button_frame, text="Refresh", command=self._refresh_file_list).pack(side=tk.LEFT, padx=2)
+        ttk.Button(button_frame, text="Plot", command=self._plot_selected_file).pack(side=tk.LEFT, padx=2)
+        ttk.Button(button_frame, text="Clear", command=self._clear_plot).pack(side=tk.LEFT, padx=2)
 
-            path = save_result("sine", indices, values, self.results_dir)
-            messagebox.showinfo("Success", f"Sine generated and saved:\n{path}")
-        except ValueError as e:
-            messagebox.showerror("Error", str(e))
-        except Exception as e:
-            messagebox.showerror("Error", f"Unexpected error: {e}")
+        # Matplotlib figure area
+        self.fig = Figure(figsize=(5, 4), dpi=100)
+        self.ax = self.fig.add_subplot(111)
+        self.ax.set_title("Signal Plot")
+        self.ax.set_xlabel("Index")
+        self.ax.set_ylabel("Value")
+        self.canvas = FigureCanvasTkAgg(self.fig, master=frame)
+        self.canvas.get_tk_widget().grid(row=0, column=1, rowspan=2, sticky="nsew", padx=5, pady=5)
 
-    def on_multiply(self):
-        if not self.signals:
-            messagebox.showerror("Error", "No signal available. Generate a sine first.")
+        self._refresh_file_list()
+
+    def _refresh_file_list(self):
+        self.file_listbox.delete(0, tk.END)
+        if os.path.exists(self.results_dir):
+            for file in os.listdir(self.results_dir):
+                if file.endswith(".txt"):
+                    self.file_listbox.insert(tk.END, file)
+
+    def _load_signal_file(self, file_path):
+        indices, values = [], []
+        with open(file_path, 'r') as f:
+            lines = f.readlines()[3:]  # Skip first 3 metadata lines
+            for line in lines:
+                i, v = line.strip().split()
+                indices.append(float(i))
+                values.append(float(v))
+        return indices, values
+
+    def _plot_selected_file(self):
+        selection = self.file_listbox.curselection()
+        if not selection:
+            messagebox.showerror("Error", "No file selected.")
             return
-        try:
-            c = simpledialog.askfloat("Multiply", "Constant (C):")
-            if c is None: return
-            indices, values = multiply_signal(self.signals[-1], c)
-            self.signals.append((indices, values))
-            path = save_result("mul", indices, values, self.results_dir)
-            messagebox.showinfo("Success", f"Signal multiplied and saved:\n{path}")
-        except Exception as e:
-            messagebox.showerror("Error", f"Unexpected error: {e}")
 
-    def on_visualize(self, mode):
-        try:
-            visualize_signal_mode(self.signals, mode=mode)
-        except ValueError as e:
-            messagebox.showerror("Error", str(e))
-        except Exception as e:
-            messagebox.showerror("Error", f"Unexpected error: {e}")
+        file_name = self.file_listbox.get(selection[0])
+        file_path = os.path.join(self.results_dir, file_name)
 
-    def on_clear(self):
-        self.signals = []
-        messagebox.showinfo("Cleared", "All signals cleared.")
+        indices, values = self._load_signal_file(file_path)
+
+        self.ax.clear()
+        self.ax.plot(indices, values)
+        self.ax.set_title(f"Signal: {file_name}")
+        self.ax.set_xlabel("Index")
+        self.ax.set_ylabel("Value")
+        self.ax.grid(True)
+
+        self.canvas.draw()
+
+    def _clear_plot(self):
+        self.ax.clear()
+        self.ax.set_title("Signal Plot")
+        self.ax.set_xlabel("Index")
+        self.ax.set_ylabel("Value")
+        self.canvas.draw()
+
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = SignalProcessorApp(root)
+    root.mainloop()

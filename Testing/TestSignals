@@ -1,0 +1,17 @@
+import unittest
+import numpy as np
+from processing import arithmetic, add_signals
+
+class TestSignals(unittest.TestCase):
+    def test_sine_wave_amplitude(self):
+        t, y = generate_sine(amp=2, freq=5, fs=100, duration=1)
+        self.assertAlmostEqual(np.max(y), 2, places=1)
+
+    def test_signal_addition(self):
+        sig1 = np.array([1, 2, 3])
+        sig2 = np.array([4, 5, 6])
+        result = add_signals(sig1, sig2)
+        np.testing.assert_array_equal(result, np.array([5, 7, 9]))
+
+if __name__ == '__main__':
+    unittest.main()
