@@ -14,7 +14,8 @@ from processing.basic_ops import *
 PACKAGE_FUNCTIONS = {
     "Generation": ["sine", "cosine"],
     "basic_ops": ["add", "subtract", "multiply", "shift", "reverse"],
-    # Add more packages/functions as you refactor
+    "signal_digitize": ["sampling", "quantization"],
+
 }
 
 
@@ -69,10 +70,11 @@ class SignalProcessorApp:
 
             params = {}
 
-            if package_name == "basic_ops":
+            if package_name in ["basic_ops", "Discrete Ops"]:
                 sig = inspect.signature(func)
 
                 for param_name in sig.parameters.keys():
+                    # Ask for input file for signals
                     file_path = filedialog.askopenfilename(
                         title=f"Select {param_name} file",
                         initialdir=self.results_dir,
@@ -81,7 +83,6 @@ class SignalProcessorApp:
                     if not file_path:
                         return
 
-                    # 🔹 load directly here, no separate function
                     indices, values = [], []
                     with open(file_path, 'r') as f:
                         lines = f.readlines()[3:]  # skip metadata
@@ -91,6 +92,14 @@ class SignalProcessorApp:
                             values.append(float(v))
 
                     params[param_name] = (indices, values)
+
+                # Ask for extra numeric parameters if needed (like rate, step, etc.)
+                for param_name, param in sig.parameters.items():
+                    if param_name not in params:
+                        value = simpledialog.askfloat("Input Required", f"Enter value for {param_name}:")
+                        if value is None:
+                            return
+                        params[param_name] = value
 
             else:
                 # for generation (still ask numbers, maybe a file if needed)
