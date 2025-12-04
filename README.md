@@ -5,16 +5,21 @@ Digital Signal Processing Library.
 .
 ├── main.py
 ├── README.md
-├── results
-│   └── task1
-    ...
-└── tests
-    └── task1
-    ...
+├── processing
+│   ├── __init__.py
+│   ├── basic_ops.py
+│   ├── generation.py
+│   └── signal_digitize.py
+...
+
 ```
 
 ## Local Setup
-- make sure you have python 3.10
+- clone the repo
+```bash
+git clone https://github.com/abdelrahman-omran/SignalFlow-Lab.git
+```
+- make sure you have python >= 3.10
     - using a virtual env is recommended
 - install packages inside `requirements.txt` file
 
