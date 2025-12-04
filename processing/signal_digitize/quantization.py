@@ -1,4 +1,4 @@
-def quantize_signal(signal, levels):
+def quantization(signal, levels):
     """
     signal: tuple (indices, values)
     levels: number of quantization levels
