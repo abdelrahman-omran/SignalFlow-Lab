@@ -1,44 +1,77 @@
-Digital Signal Processing Library.
+# SignalFlow Lab
 
-### Project File Structure
+A Digital Signal Processing (DSP) toolkit in Python with a Tkinter GUI for signal generation, processing, filtering, and visualization.
+
+## Overview
+
+SignalFlow Lab provides an interactive desktop application for performing common DSP operations. It covers signal generation, basic operations, digitization, FIR filter design with windowing, and result visualization — all through a graphical interface.
+
+## Features
+
+- **Signal Generation** — generate standard waveforms
+- **Basic Operations** — arithmetic and manipulation on signals
+- **Signal Digitization** — convert continuous signals to discrete
+- **FIR Filter Design** — low-pass, high-pass, band-pass, and band-stop filters using windowing methods (Rectangular, Hanning, Hamming, Blackman)
+- **Automatic window selection** based on stopband attenuation requirements
+- **Visualization** — plot signals and results with matplotlib
+- **Test suite** — per-task test scripts to validate output
+
+## Project Structure
+
 ```
-.
-├── main.py
-├── README.md
-├── processing
-│   ├── __init__.py
-│   ├── basic_ops.py
-│   ├── generation.py
-│   └── signal_digitize.py
-...
-
+├── main.py                 # Entry point — launches the Tkinter GUI
+├── Filteration.py          # FIR filter design with windowing
+├── gui/
+│   └── app.py              # Main GUI application (SignalProcessorApp)
+├── processing/
+│   ├── basic_ops.py        # Basic signal operations
+│   ├── generation.py       # Signal generation
+│   └── signal_digitize.py  # Signal digitization
+├── visualization/          # Plotting utilities
+├── results/                # Saved output results
+├── tests/                  # Task-based test scripts
+├── Testing/                # Additional test cases
+├── requirements.txt
+└── README.md
 ```
 
-## Local Setup
-- clone the repo
+## Getting Started
+
+### Prerequisites
+
+Python >= 3.10 is required. A virtual environment is recommended.
+
+### Install dependencies
+
 ```bash
-git clone https://github.com/abdelrahman-omran/SignalFlow-Lab.git
+pip install -r requirements.txt
 ```
-- make sure you have python >= 3.10
-    - using a virtual env is recommended
-- install packages inside `requirements.txt` file
+
+### Run the app
 
 ```bash
-pip3 install -r requirements.txt
+python main.py
 ```
 
-- make sure you are at the project's root directory, and run the app
+> On Windows: `python main.py`
+
+## Running Tests
+
+From the project root, run the test script for the task you want to verify:
 
 ```bash
-python3 main.py
+python tests/task1/*.py
 ```
 
-> or `python main.py` if on windows
+## Dependencies
 
-### Testing Steps
-**make sure you are at the project's root directory**
+- `numpy`
+- `matplotlib`
+- `pandas`
+- `pillow`
+- `scipy` (used in filter design)
+- `tkinter` (built into Python)
 
-- execute the python file inside "tests/taskX" for the task you want to test
-```bash
-python3 tests/task1/*.py
-```
+## License
+
+MIT
